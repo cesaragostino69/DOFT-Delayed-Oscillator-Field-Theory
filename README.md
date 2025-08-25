@@ -18,9 +18,7 @@ The project's goals are:
 The theory is built upon a set of core axioms that define the microscopic ontology and dynamics of the system.
 
 -   **A1 — Local Delayed Dynamics (DDE):** The fundamental equation of motion for a node `i` is a delayed differential equation:
-    $$
-    \frac{d^2q_i}{dt^2} + 2\gamma_i\frac{dq_i}{dt} + \omega_i^2q_i = \sum_j K_{ij} \sin( q_j(t - \tau_{ij}) - q_i(t) + A_{ij} ) + \xi_i(t)
-    $$
+    $$\frac{d^2q_i}{dt^2} + 2\gamma_i\frac{dq_i}{dt} + \omega_i^2q_i = \sum_j K_{ij} \sin( q_j(t - \tau_{ij}) - q_i(t) + A_{ij} ) + \xi_i(t)$$
 
 -   **A2 — Space-Time as a Delay Map:** The set of delays `{τ_ij}` encodes the causal structure. No background geometry is assumed.
 
