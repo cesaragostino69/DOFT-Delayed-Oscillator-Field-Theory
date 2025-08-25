@@ -18,6 +18,7 @@ The project's goals are:
 The theory is built upon a set of core axioms that define the microscopic ontology and dynamics of the system.
 
 -   **A1 — Local Delayed Dynamics (DDE):** The fundamental equation of motion for a node `i` is a delayed differential equation:
+  
     $$\frac{d^2q_i}{dt^2} + 2\gamma_i\frac{dq_i}{dt} + \omega_i^2q_i = \sum_j K_{ij} \sin( q_j(t - \tau_{ij}) - q_i(t) + A_{ij} ) + \xi_i(t)$$
 
 -   **A2 — Space-Time as a Delay Map:** The set of delays `{τ_ij}` encodes the causal structure. No background geometry is assumed.
@@ -29,9 +30,8 @@ The theory is built upon a set of core axioms that define the microscopic ontolo
 -   **A5 — Gravity from Delay Gradients:** Coarse gradients of `τ(x)` act as an effective refractive index, causing rays to curve and clocks to dilate.
 
 -   **A6 — Coarse-Graining with Memory:** Blocks of oscillators lead to a continuum wave-equation with a memory kernel `M`, implemented via a chain of ODE "memory variables".
-    $$
-    \frac{\partial^2\phi}{\partial t^2} - c^2\nabla^2\phi + \int_0^t M(t - t') \frac{\partial\phi}{\partial t'}(x,t') dt' = \eta(x,t)
-    $$
+
+    $$\frac{\partial^2\phi}{\partial t^2} - c^2\nabla^2\phi + \int_0^t M(t - t') \frac{\partial\phi}{\partial t'}(x,t') dt' = \eta(x,t)$$
 
 -   **LPC — Law of Preservation of Chaos:** The chaos budget is channeled and dissipated; the chaos functional does not grow without bounds under closed dynamics.
 
