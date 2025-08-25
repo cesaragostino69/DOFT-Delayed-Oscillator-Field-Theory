@@ -8,36 +8,10 @@ We will perform multiple simulation runs with varying noise amplitudes (xi_amp) 
 3. Registered Runs
 This table links each experimental run to the exact code version and configuration used. The results are stored locally in the /results/protocol_1/ directory (which is not tracked by Git).
 
-Run ID
+| Run ID | Code Version | Configuration File | Description |
+| run_1 | v1.0 | configs/protocol_1/p1_run1_quick.yml | Quick smoke test with low step count. |
+| run_2 | v1.0 | configs/protocol_1/p1_run2_long.yml | Long run with high precision for publication. |
+| run_3 | v1.1 | configs/protocol_1/p1_run3_long.yml | Re-run of run_2 with updated integrator. |
 
-Code Version
-
-Configuration File
-
-Description
-
-run_1
-
-v1.0
-
-configs/protocol_1/p1_run1_quick.yml
-
-Quick smoke test with low step count.
-
-run_2
-
-v1.0
-
-configs/protocol_1/p1_run2_long.yml
-
-Long run with high precision for publication.
-
-run_3
-
-v1.1
-
-configs/protocol_1/p1_run3_long.yml
-
-Re-run of run_2 with updated integrator.
 
 
