@@ -1,4 +1,4 @@
-# Protocol 1: hbar_eff Self-Averaging
+# Protocol 0: hbar_eff Self-Averaging
 
 ## 1. Objective
 This protocol aims to test Axiom A4' (Emergent Quantum Floor) by measuring the self-averaging exponent `β_h`. We will verify if `β_h` approaches 1 in a homogeneous noise regime.
