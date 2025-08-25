@@ -6,7 +6,6 @@ This protocol aims to test Axiom A4' (Emergent Quantum Floor) by measuring the s
 ## 2. Methodology
 We will perform multiple simulation runs with varying noise amplitudes (`xi_amp`) and dissipation factors (`gamma`). For each run, we will compute `hbar_eff` by block-averaging over different mesh scales and fit the relative variance to `R ~ N^(-β_h)`.
 
-<<<<<<< HEAD
 ## 3. Registered Runs
 
 | Run ID | Code Version | Configuration File | Description |
