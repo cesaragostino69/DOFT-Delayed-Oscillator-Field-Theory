@@ -1,0 +1,25 @@
+# Entornos virtuales y dependencias
+/env/
+/venv/
+/.venv/
+/doft_v12/
+__pycache__/
+*.pyc
+
+# Resultados de la simulación y artefactos
+# ¡Esta es la regla más importante!
+/results/
+/runs/
+*.csv
+*.png
+*.log
+*.json  # Ignorar JSON en general, pero NO en la carpeta de configs
+!configs/*.json
+
+# Archivos del sistema operativo y editores
+.DS_Store
+.vscode/
+.idea/
+
+# Backups de los scripts de parcheo
+*.bak
