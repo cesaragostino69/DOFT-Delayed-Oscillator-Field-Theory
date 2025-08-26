@@ -1,5 +1,5 @@
 # src/run_sim.py
-# -*- coding: utf-8 -*-
+# -*- coding: utf--8 -*-
 """
 Main entry point for running DOFT Phase 1 simulations.
 - Correctly generates the full parameter sweep.
@@ -114,7 +114,8 @@ def main():
     )
 
     all_runs = [r[0] for r in results if r is not None and r[0] is not None]
-    all_blocks = [b for r in results if r is not None for b in r[1]]
+    # CORRECTED LINE: Added a check to ensure the block data (r[1]) is not None.
+    all_blocks = [b for r in results if r is not None and r[1] is not None for b in r[1]]
 
     if all_runs:
         df_runs = pd.DataFrame(all_runs)
