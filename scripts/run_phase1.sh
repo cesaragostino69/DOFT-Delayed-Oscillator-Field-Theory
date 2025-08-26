@@ -9,6 +9,7 @@ export USE_GPU="${USE_GPU:-0}"
 N_JOBS="${N_JOBS:-4}"
 
 # Configuration file defining the experiments.
+# CORRECTED FILENAME: Removed the extra 's' from 'configs'.
 CONFIG_FILE="configs/config_phase1.json"
 
 # Directory to save all results.
