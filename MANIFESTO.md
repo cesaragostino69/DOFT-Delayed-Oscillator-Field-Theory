@@ -73,9 +73,7 @@ with $\sum_m w_m \approx 1$. Identify $\{\theta_m,w_m\}$ from data via **general
 On scales $\gg a$ (mean link length):
 $$
 $\partial_t^2 \phi + 2\Gamma \partial_t \phi + \Omega^2 \phi$
-$- \nabla\!\cdot\!\big(c^2 n_\mathrm{eff}^{-2}(x)\nabla \phi\big)
-+ \int_0^t M(x,t-t')\,\phi(t')\,dt'
-= \Xi(x,t).$
+$- \nabla\!\cdot\!\big(c^2 n_\mathrm{eff}^{-2}(x)\nabla \phi\big) + \int_0^t M(x,t-t')\,\phi(t')\,dt' = \Xi(x,t).$
 - $c \approx a/\tau_0$ is the emergent causal speed.  
 - $n_\mathrm{eff}(x)$ encodes averaged delay gradients; horizons occur when **flow – group speed** changes sign.  
 - $M$ is the memory kernel inherited from $\{\theta_m,w_m\}$.
