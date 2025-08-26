@@ -1,0 +1,6 @@
+@misc{doft_repo,
+  title  = {DOFT: Delayed-Oscillator Field Theory — reference implementation and experiments},
+  year   = {2025},
+  url    = {https://github.com/<org>/<repo>},
+  note   = {Versioned artifacts and reproducible runs}
+}
