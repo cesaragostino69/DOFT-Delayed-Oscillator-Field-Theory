@@ -73,9 +73,7 @@ where $c \approx a/\tau_0$ is the emergent causal speed, $n_\mathrm{eff}(x)$ enc
 ## 3) Emergent “constants”
 
 - **Speed limit $c$.**
-$$
-c \simeq \frac{a}{\tau_0}
-$$
+$$c \simeq \frac{a}{\tau_0}$$
 up to renormalizations from connectivity and weak disorder.
 
 - **Planck constant $\hbar$ as action floor.**
