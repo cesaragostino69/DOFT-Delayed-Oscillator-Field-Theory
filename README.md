@@ -58,15 +58,26 @@ These are **claims under test**, not final truths.
 ## Repository layout
 
 ```
-repo/
-  sim/                    # CPU reference engine
-    core.py               # state, step_euler, kernels
-    kernels.py            # Prony/exp kernels
-    io.py                 # dataset I/O
-  runs/                   # experiment configs (.yaml)
-  reports/                # notebooks & exporters
-  tests/                  # regression/validation tests
-  README.md               # this file
+DOFT/
+├── README.md                ← guía rápida y objetivos del proyecto
+├── LICENSE
+├── pyproject.toml / setup.cfg
+├── requirements/            ← dependencias separadas (base, dev, docs, etc.)
+├── src/
+│   └── doft/                ← paquete Python con todo el código fuente
+│       ├── __init__.py
+│       ├── models/
+│       ├── simulation/
+│       ├── analysis/
+│       └── utils/
+├── scripts/                 ← scripts CLI o de mantenimiento
+├── configs/                 ← archivos JSON/YAML de configuración
+├── tests/                   ← pruebas unitarias e integración (pytest)
+├── docs/                    ← documentación extensa, guías, papers
+├── notebooks/               ← experimentos o tutoriales en Jupyter
+├── runs/                    ← resultados de corridas (git‑ignored)
+└── .gitignore
+
 ```
 
 ---
