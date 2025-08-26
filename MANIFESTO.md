@@ -19,13 +19,11 @@
 ## 1) Axioms
 
 - **A0 – Law of Preservation of Chaos (LPC).**  
-  There exists a non‑negative functional $\mathcal{K}[q]$ (e.g., Kolmogorov‑Sinai entropy rate proxy or sum of positive Lyapunov exponents) with balance 
-  
-  $$
-  frac{d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D}, where $\mathcal{D}\ge 0
-  $$
-  
-  captures dissipation/regularization. In closed subsystems $\Phi_\mathrm{in}=\Phi_\mathrm{out}=0\Rightarrow d\mathcal{K}/dt\le 0$.
+  There exists a non‑negative functional $\mathcal{K}[q]$ (e.g., Kolmogorov‑Sinai entropy rate proxy or sum of positive Lyapunov exponents) with balance
+  \[
+  \frac{d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D},
+  \]
+  where $\mathcal{D}\ge 0$ captures dissipation/regularization. In closed subsystems $\Phi_\mathrm{in}=\Phi_\mathrm{out}=0\Rightarrow d\mathcal{K}/dt\le 0$.
 
 - **A1 – Local delayed dynamics.**  
   Each node $i$ evolves as
@@ -241,6 +239,5 @@ Information‑bearing oscillations propagate in a **no‑background** substrate;
 - **Contributions:** please include (i) parameter JSONs, (ii) seeds, (iii) environment hashes, and (iv) raw/derived CSVs. Open an issue for proposals to extend the axiom set or to add new falsification tests.
 
 ---
-
 
 *This is a living document. Tag releases as* `DOFT_Manifesto_v1.3`, *and cite component modules (kernel‑ID, LPC monitors, self‑averaging probes) with their semantic versions.*
