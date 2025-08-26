@@ -110,6 +110,7 @@ $$n_\mathrm{eff}^2(x) \simeq 1 + \alpha_\tau\, \rho(x)$$
   Small cycles around “cores” induce phase defects that shift effective Rydberg energies:
   $$E_{n\ell} \approx -\frac{R_\mathrm{eff}}{(n-\delta_\ell)^2},\qquad
   \delta_\ell \;\text{from short-loop holonomies and local polarizability}.$$
+  
 - **Predictions:**  
   (i) Collapse of line families when scaling $\nu_{m}$ by $(n^\*)^3 R_\mathrm{eff}$;  
   (ii) linear trends of $\delta_\ell$ vs. $1/(n^\*)^2$ with slopes correlated to ionic core **static polarizability** $\alpha_0$;  
