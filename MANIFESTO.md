@@ -78,15 +78,11 @@ up to renormalizations from connectivity and weak disorder.
 
 - **Planck constant $\hbar$ as action floor.**
 The stationary stochastic dynamics with A0+A4′ sustains **limit-cycle ensembles** whose phase-space area per cycle stabilizes to
-$$
-A_0 \equiv \oint p\,dq \;\approx\; 2\pi\, \hbar_\mathrm{eff}.
-$$
+$$A_0 \equiv \oint p\,dq \;\approx\; 2\pi\, \hbar_\mathrm{eff}.$$
 We estimate $\hbar_\mathrm{eff}$ from local fluctuations as an **operational proxy**
 $\;\hbar_\mathrm{eff}\sim \sigma_Q \sigma_P\;$ (up to a numerical factor),
 and test **self-averaging** scaling:
-$$
-\frac{\mathrm{Var}(\hbar_\mathrm{eff})}{\big(\mathbb{E}[\hbar_\mathrm{eff}]\big)^2} \;\sim\; N^{-\beta_\hbar}.
-$$
+$$\frac{\mathrm{Var}(\hbar_\mathrm{eff})}{\big(\mathbb{E}[\hbar_\mathrm{eff}]\big)^2} \;\sim\; N^{-\beta_\hbar}.$$
 
 - **Newton constant $G$ as delay-sensitivity map.**
 In the continuum,
