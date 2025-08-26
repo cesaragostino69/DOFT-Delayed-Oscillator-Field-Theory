@@ -4,7 +4,7 @@
 Main entry point for running DOFT Phase 1 simulations.
 - Correctly generates the full parameter sweep.
 - Ensures all LPC metrics are logged according to the data contract.
-- Added robust handling of NaN/inf values during results aggregation.
+- Added robust handling of NaN/inf values and individual run failures.
 """
 
 import os
@@ -20,37 +20,48 @@ from tqdm import tqdm
 from .model import DOFTModel
 
 def run_one_simulation(cfg, out_dir):
-    run_id = f"run_{uuid.uuid4().hex[:8]}"
-    model = DOFTModel(cfg)
-    experiment_type = cfg.get("experiment_type", "chaos")
+    """
+    Executes a single simulation run within a try-except block to prevent
+    a single failure from crashing the entire batch.
+    """
+    try:
+        run_id = f"run_{uuid.uuid4().hex[:8]}"
+        model = DOFTModel(cfg)
+        experiment_type = cfg.get("experiment_type", "chaos")
 
-    run_result, blocks_data = {}, []
-    if experiment_type == "pulse":
-        run_result, blocks_data = model.run_pulse_experiment(xi_amp=float(cfg.get("xi_amp", 1e-4)))
-    else:
-        run_result, blocks_data = model.run_chaos_experiment(xi_amp=float(cfg.get("xi_amp", 1e-4)))
+        run_result, blocks_data = {}, []
+        if experiment_type == "pulse":
+            run_result, blocks_data = model.run_pulse_experiment(xi_amp=float(cfg.get("xi_amp", 1e-4)))
+        else:
+            run_result, blocks_data = model.run_chaos_experiment(xi_amp=float(cfg.get("xi_amp", 1e-4)))
 
-    run_row = {
-        "run_id": run_id,
-        "seed": cfg["seed"],
-        "a_mean": cfg["a"]["mean"],
-        "tau_mean": cfg["tau0"]["mean"],
-        "gamma": cfg["gamma"],
-        "ceff_pulse": run_result.get("ceff_pulse", None),
-        "ceff_pulse_ic95": None,
-        "anisotropy_max_pct": run_result.get("anisotropy_max_pct", None),
-        "lpc_deltaK_neg_frac": run_result.get("lpc_deltaK_neg_frac", None),
-        "lpc_vcount": run_result.get("lpc_vcount", None)
-    }
+        run_row = {
+            "run_id": run_id,
+            "seed": cfg["seed"],
+            "a_mean": cfg["a"]["mean"],
+            "tau_mean": cfg["tau0"]["mean"],
+            "gamma": cfg["gamma"],
+            "ceff_pulse": run_result.get("ceff_pulse", None),
+            "ceff_pulse_ic95": None,
+            "anisotropy_max_pct": run_result.get("anisotropy_max_pct", None),
+            "lpc_deltaK_neg_frac": run_result.get("lpc_deltaK_neg_frac", None),
+            "lpc_vcount": run_result.get("lpc_vcount", None)
+        }
 
-    for block in blocks_data:
-        block["run_id"] = run_id
+        for block in blocks_data:
+            block["run_id"] = run_id
 
-    meta_info = {"run_id": run_id, "config": cfg}
-    with open(out_dir / f"{run_id}_meta.json", "w") as f:
-        json.dump(meta_info, f, indent=2, default=lambda o: '<not serializable>')
+        meta_info = {"run_id": run_id, "config": cfg}
+        with open(out_dir / f"{run_id}_meta.json", "w") as f:
+            json.dump(meta_info, f, indent=2, default=lambda o: '<not serializable>')
 
-    return run_row, blocks_data
+        return run_row, blocks_data
+    except Exception as e:
+        print(f"\n---!!! ERROR in simulation with seed {cfg.get('seed', 'N/A')} !!!---")
+        print(f"Config: a={cfg.get('a', {}).get('mean')}, tau={cfg.get('tau0', {}).get('mean')}")
+        print(f"Error details: {e}")
+        print("--------------------------------------------------------------------")
+        return None, None # Return None to signal failure, preventing a crash
 
 def main():
     parser = argparse.ArgumentParser(description="DOFT Phase 1 Simulation Runner")
@@ -102,7 +113,6 @@ def main():
 
     if all_runs:
         df_runs = pd.DataFrame(all_runs)
-        # Coerce numeric columns to handle potential errors like NaN/inf
         for col in df_runs.columns:
             if df_runs[col].dtype == 'object':
                  df_runs[col] = pd.to_numeric(df_runs[col], errors='ignore')
