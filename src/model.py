@@ -32,6 +32,7 @@ def _as_dtype(name):
 
 
 import numpy as np
+import numpy as np
 
 from .utils import RateLogger, spectral_entropy, anisotropy_from_ceff_map
 
@@ -208,6 +209,8 @@ Datos que Causaron el Error:
         tau_mean = float(cfg["tau0"]["mean"]); tau_sigma = float(cfg["tau0"]["sigma"])
         self.a_map = rng.normal(a_mean, a_sigma, size=(L, L)).astype(np.float64)
         self.tau_map = rng.normal(tau_mean, tau_sigma, size=(L, L)).astype(np.float64)
+        self.a_map = rng.normal(a_mean, a_sigma, size=(L, L)).astype(np.float64)
+        self.tau_map = rng.normal(tau_mean, tau_sigma, size=(L, L)).astype(np.float64)
         self.ceff_map = np.divide(self.a_map, self.tau_map + 1e-12)
         self.ceff_bar = float(np.mean(self.ceff_map))
         self.aniso_rel = anisotropy_from_ceff_map(self.ceff_map)
@@ -219,8 +222,17 @@ Datos que Causaron el Error:
         self.theta = np.array(cfg.get("prony_thetas", [1e-3, 1e-2, 1e-1]), dtype=np.float64).reshape(1, 3)
         self.w = np.array(cfg.get("prony_weights", [0.6, 0.3, 0.1]), dtype=np.float64).reshape(1, 3)
         self.Y = np.zeros((self.batch, 3), dtype=np.float64)
+        self.device = "cpu"
+
+        self.Q = np.zeros(self.batch, dtype=np.float64)
+        self.P = np.zeros(self.batch, dtype=np.float64)
+        self.theta = np.array(cfg.get("prony_thetas", [1e-3, 1e-2, 1e-1]), dtype=np.float64).reshape(1, 3)
+        self.w = np.array(cfg.get("prony_weights", [0.6, 0.3, 0.1]), dtype=np.float64).reshape(1, 3)
+        self.Y = np.zeros((self.batch, 3), dtype=np.float64)
 
         self.win = int(cfg.get("window", 2048))
+        self.bufQ = np.zeros((self.batch, self.win), dtype=np.float64)
+        self.bufP = np.zeros((self.batch, self.win), dtype=np.float64)
         self.bufQ = np.zeros((self.batch, self.win), dtype=np.float64)
         self.bufP = np.zeros((self.batch, self.win), dtype=np.float64)
         self.bidx = 0
@@ -236,8 +248,18 @@ Datos que Causaron el Error:
         self.bufQ[:, j] = self.Q
         self.bufP[:, j] = self.P
         self.bidx += 1
+        xi = np.random.randn(*self.Q.shape).astype(np.float64) * float(xi_amp)
+        self.Y = self.Y + dt * ( - self.Y / self.theta + self.w * self.Q.reshape(-1,1) )
+        Mterm = np.sum(self.Y, axis=1)
+        self.P = self.P + dt * (-self.K * self.Q + Mterm + xi)
+        self.Q = self.Q + dt * self.P
+        j = self.bidx % self.win
+        self.bufQ[:, j] = self.Q
+        self.bufP[:, j] = self.P
+        self.bidx += 1
 
     def _to_numpy(self, T):
+        return np.array(T, dtype=np.float64, copy=True)
         return np.array(T, dtype=np.float64, copy=True)
 
     def run(self, gamma: float, xi_amp: float, seed: int, out_dir: str) -> dict:
