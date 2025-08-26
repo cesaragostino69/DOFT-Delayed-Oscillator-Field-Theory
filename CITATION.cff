@@ -1,6 +1,25 @@
-@misc{doft_repo,
-  title  = {DOFT: Delayed-Oscillator Field Theory — reference implementation and experiments},
-  year   = {2025},
-  url    = {https://github.com/cesaragostino/DOFT-Delayed-Oscillator-Field-Theory},
-  note   = {Versioned artifacts and reproducible runs}
-}
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "DOFT — Delayed Oscillator Field Theory"
+type: software
+authors:
+  - family-names: Agostino
+    given-names: Cesar
+repository-code: "https://github.com/cesaragostino/DOFT-Delayed-Oscillator-Field-Theory"
+version: "v0.1.0"
+date-released: 2025-08-26
+doi: 10.5281/zenodo.XXXXXXX        # DOI de versión (este release)
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.XXXXXXX  # mismo que arriba
+  - type: doi
+    value: 10.5281/zenodo.YYYYYYY  # concept DOI (todas las versiones)
+preferred-citation:
+  type: software
+  title: "DOFT — Delayed Oscillator Field Theory"
+  authors:
+    - family-names: Agostino
+      given-names: Cesar
+  year: 2025
+  doi: 10.5281/zenodo.XXXXXXX
+  url: "https://github.com/cesaragostino/DOFT-Delayed-Oscillator-Field-Theory"
