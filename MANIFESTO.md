@@ -28,8 +28,7 @@
 - **A1 – Local delayed dynamics.**  
   Each node $i$ evolves as
   
-  $$\ddot q_i + 2\gamma_i \dot q_i + \omega_i^2 q_i + \alpha_i |q_i|^2 q_i
-  = \sum_{j\in \mathcal{N}(i)} K_{ij}\, \sin\!\big(\theta_{ij}(t)\big)\, q_j\!\big(t-\tau_{ij}(t)\big) + \xi_i(t).$$
+  $$\ddot q_i + 2\gamma_i \dot q_i + \omega_i^2 q_i + \alpha_i |q_i|^2 q_i = \sum_{j\in \mathcal{N}(i)} K_{ij}\, \sin\!\big(\theta_{ij}(t)\big)\, q_j\!\big(t-\tau_{ij}(t)\big) + \xi_i(t).$$
   
   Here $\xi_i$ is a weak, broadband noise (“quantum floor”).
 
