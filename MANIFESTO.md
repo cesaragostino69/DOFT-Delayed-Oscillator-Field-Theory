@@ -120,10 +120,10 @@ $$n_\mathrm{eff}^2(x) \simeq 1 + \alpha_\tau\, \rho(x)$$
 ## 5) Gravity analogue, horizons, and antimatter
 
 - **Index gradient and geodesics.**  
-  Rays follow Fermat in $n_\mathrm{eff}(x)$. A **horizon** forms where a drift $u$ exceeds local wave group speed $v_g=c/n_\mathrm{eff}$.
+  Rays follow Fermat in $n_{\mathrm{eff}}(x)$. A **horizon** forms where a drift $u$ exceeds local wave group speed $v_g = c / n_{\mathrm{eff}}$.
 
 - **Hawking analogue.**  
-  $$T_H \propto \big|\partial_x(u-v_g)\big|_{x_H}$$. In DOFT this depends on $$\partial_x n_\mathrm{eff}$$ which is set by delay gradients.
+  $T_H \propto \bigl|\partial_x(u - v_g)\bigr|_{x_H}$. In DOFT this depends on $\bigl|\partial_x n_{\mathrm{eff}}\bigr|$, which is set by delay gradients.
 
 - **Antimatter.**  
   Curvature depends on the **magnitude** of delay gradients, not the sign of phase. Prediction: **same gravitational response** for matter/antimatter at leading order.
