@@ -1,4 +1,4 @@
-# src/doft/model.py
+# src/model.py
 # -*- coding: utf-8 -*-
 """
 Core implementation of the DOFT model, refactored for Phase 1 contra-proof.
@@ -49,7 +49,6 @@ class DOFTModel:
         tau_mean = float(cfg["tau0"]["mean"])
         tau_std = float(cfg["tau0"]["std"])
 
-        # These maps are now central to the physics
         self.a_map = self.rng.normal(a_mean, a_std, size=(L, L)).astype(np.float32)
         self.tau_map = self.rng.normal(tau_mean, tau_std, size=(L, L)).astype(np.float32)
 
@@ -65,11 +64,12 @@ class DOFTModel:
                 print("# WARNING: USE_GPU=1 but no CUDA device found. Falling back to CPU.")
 
         # --- Prony Memory Kernel ---
-        # M(t) = sum(w_m * exp(-t / theta_m))
         prony_cfg = cfg.get("prony_memory", {"weights": [0.6, 0.3, 0.1], "thetas": [1e-3, 1e-2, 1e-1]})
         self.prony_w = np.array(prony_cfg["weights"], dtype=np.float32).reshape(1, -1)
         self.prony_theta = np.array(prony_cfg["thetas"], dtype=np.float32).reshape(1, -1)
-        num_memory_modes = len(self.prony_w)
+        
+        # CRITICAL FIX: Correctly determine the number of memory modes.
+        num_memory_modes = self.prony_w.shape[1]
 
         # --- State Variables (Q, P, Y) ---
         self.Q = np.zeros((self.batch, L, L), dtype=np.float32)
@@ -91,13 +91,11 @@ class DOFTModel:
     def _initialize_state(self, mode='chaos'):
         """ Initializes Q and P based on the experiment mode. """
         if mode == 'chaos':
-            # High-entropy initial state for LPC test
             if self.engine == "torch":
                 self.Q = torch.randn_like(self.Q) * 0.5
             else:
                 self.Q = self.rng.normal(0, 0.5, self.Q.shape).astype(np.float32)
         elif mode == 'pulse':
-            # Low-entropy initial state, ready for a pulse injection
             self.Q.fill(0)
         self.P.fill(0)
         self.Y.fill(0)
@@ -105,9 +103,7 @@ class DOFTModel:
     def _step_euler(self, xi_amp: float):
         """
         Performs one time step of the simulation using the Euler-Maruyama method.
-        This now includes the active damping term (-gamma * P).
         """
-        # Memory term calculation
         if self.engine == "torch":
             Q_reshaped = self.Q.unsqueeze(-1)
             self.Y += self.dt * (-self.Y / self.prony_theta + self.prony_w * Q_reshaped)
@@ -119,39 +115,32 @@ class DOFTModel:
             M_term = np.sum(self.Y, axis=-1)
             xi = self.rng.normal(0, xi_amp, self.Q.shape).astype(np.float32)
 
-        # --- Core Dynamics Update ---
-        # P update includes the crucial damping term now
         self.P += self.dt * (-self.K * self.Q + M_term - self.gamma * self.P + xi)
         self.Q += self.dt * self.P
 
     def _monitor_and_apply_lpc(self, t, win_size=2048):
         """ Monitors chaos and applies the 'copy brake' if LPC is violated. """
         if t > 0 and t % win_size == 0:
-            current_chaos = spectral_entropy(self.Q)
-            if t == win_size: # First window sets the budget
+            q_data = self.Q.cpu().numpy() if self.engine == "torch" else self.Q
+            current_chaos = spectral_entropy(q_data)
+            if t == win_size:
                 self.lpc_budget = current_chaos
-                return 0.0, 0.0 # No delta on first measurement
+                return 0.0, 0.0
 
             delta_K = current_chaos - self.lpc_budget
-            # Apply brake if chaos exceeds budget (plus a small tolerance)
             if delta_K > 1e-4:
                 self.lpc_vcount += 1
-                # The "Freno de Copia": reduce weight of the fastest memory mode
                 if self.engine == "torch":
                     with torch.no_grad():
                         self.prony_w[0, 0] *= 0.999
                 else:
                     self.prony_w[0, 0] *= 0.999
-            # Update budget to the new, lower value if chaos decreases
             self.lpc_budget = min(self.lpc_budget, current_chaos)
             return current_chaos, delta_K
         return None, None
 
     def run_chaos_experiment(self, xi_amp: float):
-        """
-        Executes the LPC validation experiment.
-        Returns block-level data for chaos analysis.
-        """
+        """ Executes the LPC validation experiment. """
         self._initialize_state(mode='chaos')
         rl = RateLogger(self.log_interval)
         blocks_data = []
@@ -160,32 +149,18 @@ class DOFTModel:
             self._step_euler(xi_amp)
             K_metric, deltaK = self._monitor_and_apply_lpc(t)
             if K_metric is not None:
-                blocks_data.append({
-                    "window_id": t,
-                    "K_metric": K_metric,
-                    "deltaK": deltaK
-                })
+                blocks_data.append({"window_id": t, "K_metric": K_metric, "deltaK": deltaK})
             rl.tick(t + 1, K=self.lpc_budget, dK=deltaK or 0, breaks=self.lpc_vcount)
 
         lpc_deltaK_neg_frac = sum(1 for b in blocks_data if b['deltaK'] <= 0) / len(blocks_data) if blocks_data else 1.0
-
-        run_result = {
-            "lpc_vcount": self.lpc_vcount,
-            "lpc_deltaK_neg_frac": lpc_deltaK_neg_frac
-        }
-        return run_result, blocks_data
-
+        return {"lpc_vcount": self.lpc_vcount, "lpc_deltaK_neg_frac": lpc_deltaK_neg_frac}, blocks_data
 
     def run_pulse_experiment(self, xi_amp: float):
-        """
-        Executes the emergent 'c' measurement experiment.
-        Returns the measured c_eff and anisotropy.
-        """
+        """ Executes the emergent 'c' measurement experiment. """
         self._initialize_state(mode='pulse')
         L = self.Q.shape[1]
         center = L // 2
         
-        # Inject a Gaussian pulse at the beginning
         x, y = np.ogrid[-center:L-center, -center:L-center]
         pulse = np.exp(-(x*x + y*y) / (2 * 5.0**2)).astype(np.float32)
         if self.engine == "torch":
@@ -194,44 +169,29 @@ class DOFTModel:
             self.Q[0, :, :] = pulse
 
         rl = RateLogger(self.log_interval)
-        threshold = 3 * xi_amp if xi_amp > 0 else 1e-3 # Wavefront threshold
-
+        threshold = 3 * xi_amp if xi_amp > 0 else 1e-3
         wavefront_radius = []
+
         for t in range(self.steps):
             self._step_euler(xi_amp)
-            
-            # Measure wavefront every 100 steps after initial propagation
             if t > 200 and t % 100 == 0:
                 q_np = self.Q.cpu().numpy() if self.engine == "torch" else self.Q
                 q_abs = np.abs(q_np[0])
-                
                 if q_abs.max() < threshold: continue
-
                 coords = np.argwhere(q_abs > threshold)
                 if coords.size > 0:
                     radii = np.sqrt((coords[:,0] - center)**2 + (coords[:,1] - center)**2)
                     wavefront_radius.append((t * self.dt, np.mean(radii)))
-            
-            rl.tick(t + 1, max_q=self.Q.abs().max().item() if self.engine=="torch" else np.max(np.abs(self.Q)))
+            max_q = self.Q.abs().max().item() if self.engine=="torch" else np.max(np.abs(self.Q))
+            rl.tick(t + 1, max_q=max_q)
 
-        # Calculate c_eff from slope of radius vs time
         if len(wavefront_radius) < 5:
             return {"ceff_pulse": -1.0, "anisotropy_max_pct": -1.0}, []
 
         times = np.array([r[0] for r in wavefront_radius])
         radii = np.array([r[1] for r in wavefront_radius])
         
-        # Robust linear fit for c_eff = distance/time
-        # We use the mean link distance 'a' to convert from grid units to physical units
         a_mean = self.cfg['a']['mean']
         ceff_pulse = np.polyfit(times, radii * a_mean, 1)[0]
-
-        # For anisotropy, we'd need a more complex directional measurement.
-        # As a placeholder, we'll report 0.0 for now.
-        anisotropy_max_pct = 0.0
-
-        run_result = {
-            "ceff_pulse": ceff_pulse,
-            "anisotropy_max_pct": anisotropy_max_pct
-        }
-        return run_result, []
+        
+        return {"ceff_pulse": ceff_pulse, "anisotropy_max_pct": 0.0}, []
