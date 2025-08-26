@@ -23,7 +23,7 @@ There exists a non-negative functional $\mathcal{K}[q]$ (e.g., Kolmogorov-Sinai 
 $$\frac{d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D}, \qquad \mathcal{D}\ge 0.$$
 In closed subsystems $\Phi_\mathrm{in}=\Phi_\mathrm{out}=0\Rightarrow d\mathcal{K}/dt\le 0$.
 
-- **A1 – Local delayed dynamics.** *(microscopic, possibly complex amplitudes $q_i\in\mathbb{C}$)*
+- **A1 – Local delayed dynamics.** *(microscopic, possibly complex amplitudes $$q_i\in\mathbb{C}$$)*
 $$\ddot q_i + 2\gamma_i \dot q_i + \omega_i^2 q_i + \alpha_i |q_i|^2 q_i
 = \sum_{j\in \mathcal{N}(i)} K_{ij}\, \sin\!\big(A_{ij}(t)\big)\, q_j\!\big(t-\tau_{ij}(t)\big) + \xi_i(t).$$
 Here $\xi_i$ is a weak, broadband noise (“quantum floor”).
@@ -33,9 +33,7 @@ The matrix of delays $\{\tau_{ij}\}$ defines cones of influence; geometry and cl
 
 - **A3 – Holonomy primacy.**
 Physical invariants are **loop phases**
-$$
-W(\ell)=\exp\!\Big(i\sum_{(ij)\in \ell} A_{ij}\Big),
-$$
+$$W(\ell)=\exp\!\Big(i\sum_{(ij)\in \ell} A_{ij}\Big),$$
 with link phases $A_{ij}$ accumulated by transport. Local gauge choices are unphysical; only holonomies matter.
 
 - **A4 – Quantum floor.**
