@@ -20,20 +20,17 @@
 
 - **A0 – Law of Preservation of Chaos (LPC).**  
   There exists a non‑negative functional $\mathcal{K}[q]$ (e.g., Kolmogorov‑Sinai entropy rate proxy or sum of positive Lyapunov exponents) with balance
-
-$$
-
-$$
-
+  \[
+  \frac{d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D},
+  \]
   where $\mathcal{D}\ge 0$ captures dissipation/regularization. In closed subsystems $\Phi_\mathrm{in}=\Phi_\mathrm{out}=0\Rightarrow d\mathcal{K}/dt\le 0$.
 
 - **A1 – Local delayed dynamics.**  
   Each node $i$ evolves as
-
-$$
-
-$$
-
+  \[
+  \ddot q_i + 2\gamma_i \dot q_i + \omega_i^2 q_i + \alpha_i |q_i|^2 q_i
+  = \sum_{j\in \mathcal{N}(i)} K_{ij}\, \sin\!\big(\theta_{ij}(t)\big)\, q_j\!\big(t-\tau_{ij}(t)\big) + \xi_i(t).
+  \]
   Here $\xi_i$ is a weak, broadband noise (“quantum floor”).
 
 - **A2 – Spacetime as delay‑graph.**  
@@ -41,9 +38,9 @@ $$
 
 - **A3 – Holonomy primacy.**  
   Physical invariants are **loop phases**
-  \(
+$$
   W(\ell)=\exp\!\big(i\sum_{(i\!j)\in \ell} A_{ij}\big),
-  \)
+$$
   with link phases $A_{ij}$ accumulated by transport. Local gauge choices are unphysical; only holonomies matter.
 
 - **A4 – Quantum floor.**  
@@ -60,25 +57,28 @@ $$
 ## 2) Working equations and continuum limit
 
 ### 2.1 Discrete graph (micro)
-
-$$
-$$
-
+\[
+\ddot q_i + 2\gamma \dot q_i + \omega_0^2 q_i + \alpha |q_i|^2 q_i
+= \sum_{j} K_{ij}\, \sin(A_{ij})\, q_j(t-\tau_{ij}) + \xi_i(t),
+\quad \tau_{ij}=\tau_0 + \delta\tau_{ij}[q,\rho].
+\]
 
 ### 2.2 Memory‑compressed surrogate
 Replace pure delays by a finite Prony chain
-
-$$
-$$
-
+\[
+\dot y_m = -\theta_m y_m + \beta_m q,\qquad
+\text{use}\;\; q(t-\tau)\approx \sum_m w_m y_m(t),
+\]
 with $\sum_m w_m \approx 1$. Identify $\{\theta_m,w_m\}$ from data via **generalized Prony/Vector‑Fitting** to preserve spectra and decay.
 
 ### 2.3 Continuum coarse‑graining
 On scales $\gg a$ (mean link length):
-
-$$
-$$
-
+\[
+\partial_t^2 \phi + 2\Gamma \partial_t \phi + \Omega^2 \phi
+- \nabla\!\cdot\!\big(c^2 n_\mathrm{eff}^{-2}(x)\nabla \phi\big)
++ \int_0^t M(x,t-t')\,\phi(t')\,dt'
+= \Xi(x,t).
+\]
 - $c \approx a/\tau_0$ is the emergent causal speed.  
 - $n_\mathrm{eff}(x)$ encodes averaged delay gradients; horizons occur when **flow – group speed** changes sign.  
 - $M$ is the memory kernel inherited from $\{\theta_m,w_m\}$.
@@ -92,21 +92,21 @@ $$
 
 - **Planck constant $\hbar$ as action floor.**  
   The stationary stochastic dynamics with A0+A4′ sustains **limit‑cycle ensembles** whose phase‑space area per cycle stabilizes to
-  \(
+$$
   A_0 \equiv \oint p\,dq \approx 2\pi \hbar_\mathrm{eff}.
-  \)
+$$
   We estimate $\hbar_\mathrm{eff}$ from local fluctuations
   $\hbar_\mathrm{eff}\sim \sigma_Q \sigma_P$
   and test **self‑averaging** scaling
-  \(
+$$
   \mathrm{Var}(\hbar_\mathrm{eff})/\mathbb{E}[\hbar_\mathrm{eff}]^2 \sim N^{-\beta_\hbar}.
-  \)
+$$
 
 - **Newton constant $G$ as delay‑sensitivity map.**  
   In the continuum,
-  \(
+$$
   n_\mathrm{eff}^2(x) \simeq 1 + \alpha_\tau\, \rho(x)
-  \)
+$$
   with $\alpha_\tau = \partial n_\mathrm{eff}^2/\partial \rho$. Linearizing ray bending and matching to weak‑field GR gives a constitutive link $G \propto c^2\,\alpha_\tau$ after proper normalization. This is a working **hypothesis to be derived** from the microdynamics.
 
 ---
@@ -115,11 +115,10 @@ $$
 
 - **Holonomy as short‑loop physics.**  
   Small cycles around “cores” induce phase defects that shift effective Rydberg energies:
-
-$$
-
-$$
-
+  \[
+  E_{n\ell} \approx -\frac{R_\mathrm{eff}}{(n-\delta_\ell)^2},\qquad
+  \delta_\ell \;\text{from short-loop holonomies and local polarizability}.
+  \]
 - **Predictions:**  
   (i) Collapse of line families when scaling $\nu_{m}$ by $(n^\*)^3 R_\mathrm{eff}$;  
   (ii) linear trends of $\delta_\ell$ vs. $1/(n^\*)^2$ with slopes correlated to ionic core **static polarizability** $\alpha_0$;  
