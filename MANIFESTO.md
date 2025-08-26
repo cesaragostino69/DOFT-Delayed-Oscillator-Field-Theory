@@ -21,16 +21,16 @@
 - **A0 – Law of Preservation of Chaos (LPC).**  
   There exists a non‑negative functional $\mathcal{K}[q]$ (e.g., Kolmogorov‑Sinai entropy rate proxy or sum of positive Lyapunov exponents) with balance
   
-  \$$\frac{d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D},$$
+  $$\frac{d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D},$$
 
   where $\mathcal{D}\ge 0$ captures dissipation/regularization. In closed subsystems $\Phi_\mathrm{in}=\Phi_\mathrm{out}=0\Rightarrow d\mathcal{K}/dt\le 0$.
 
 - **A1 – Local delayed dynamics.**  
   Each node $i$ evolves as
-  \[
-  \ddot q_i + 2\gamma_i \dot q_i + \omega_i^2 q_i + \alpha_i |q_i|^2 q_i
-  = \sum_{j\in \mathcal{N}(i)} K_{ij}\, \sin\!\big(\theta_{ij}(t)\big)\, q_j\!\big(t-\tau_{ij}(t)\big) + \xi_i(t).
-  \]
+  
+  $$\ddot q_i + 2\gamma_i \dot q_i + \omega_i^2 q_i + \alpha_i |q_i|^2 q_i
+  = \sum_{j\in \mathcal{N}(i)} K_{ij}\, \sin\!\big(\theta_{ij}(t)\big)\, q_j\!\big(t-\tau_{ij}(t)\big) + \xi_i(t).$$
+  
   Here $\xi_i$ is a weak, broadband noise (“quantum floor”).
 
 - **A2 – Spacetime as delay‑graph.**  
@@ -38,9 +38,9 @@
 
 - **A3 – Holonomy primacy.**  
   Physical invariants are **loop phases**
-$$
-  W(\ell)=\exp\!\big(i\sum_{(i\!j)\in \ell} A_{ij}\big),
-$$
+
+  $$W(\ell)=\exp\!\big(i\sum_{(i\!j)\in \ell} A_{ij}\big),$$
+
   with link phases $A_{ij}$ accumulated by transport. Local gauge choices are unphysical; only holonomies matter.
 
 - **A4 – Quantum floor.**  
