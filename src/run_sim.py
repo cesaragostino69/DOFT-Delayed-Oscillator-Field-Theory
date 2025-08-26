@@ -4,6 +4,7 @@
 Main entry point for running DOFT Phase 1 simulations.
 - Correctly generates the full parameter sweep.
 - Ensures all LPC metrics are logged according to the data contract.
+- Added robust handling of NaN/inf values during results aggregation.
 """
 
 import os
@@ -13,6 +14,7 @@ import pathlib
 import argparse
 import uuid
 import itertools
+import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
 from .model import DOFTModel
@@ -68,7 +70,6 @@ def main():
         exp_base_cfg = {k: v for k, v in config.items() if k != "experiments"}
         exp_base_cfg.update({k: v for k, v in experiment.items() if not isinstance(v, list)})
 
-        # Correctly generate the full 3x3 sweep for the pulse experiment
         if experiment['experiment_type'] == 'pulse':
             param_combinations = list(itertools.product(
                 experiment['a'],
@@ -95,22 +96,26 @@ def main():
         delayed(run_one_simulation)(task_cfg, out_dir) for task_cfg in tqdm(tasks)
     )
 
+    # --- Aggregate and save results robustly using pandas ---
     all_runs = [r[0] for r in results if r is not None and r[0] is not None]
     all_blocks = [b for r in results if r is not None for b in r[1]]
 
     if all_runs:
-        with open(out_dir / "runs.csv", "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=all_runs[0].keys())
-            writer.writeheader()
-            writer.writerows(all_runs)
-        print(f"# Saved {len(all_runs)} entries to runs.csv")
+        df_runs = pd.DataFrame(all_runs)
+        # Coerce numeric columns to handle potential errors like NaN/inf
+        for col in df_runs.columns:
+            if df_runs[col].dtype == 'object':
+                 df_runs[col] = pd.to_numeric(df_runs[col], errors='ignore')
+        df_runs.to_csv(out_dir / "runs.csv", index=False, na_rep='NA')
+        print(f"# Saved {len(df_runs)} entries to runs.csv")
 
     if all_blocks:
-        with open(out_dir / "blocks.csv", "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=all_blocks[0].keys())
-            writer.writeheader()
-            writer.writerows(all_blocks)
-        print(f"# Saved {len(all_blocks)} entries to blocks.csv")
+        df_blocks = pd.DataFrame(all_blocks)
+        for col in df_blocks.columns:
+            if df_blocks[col].dtype == 'object':
+                 df_blocks[col] = pd.to_numeric(df_blocks[col], errors='ignore')
+        df_blocks.to_csv(out_dir / "blocks.csv", index=False, na_rep='NA')
+        print(f"# Saved {len(df_blocks)} entries to blocks.csv")
 
 if __name__ == "__main__":
     main()
