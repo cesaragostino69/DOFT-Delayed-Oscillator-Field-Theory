@@ -61,8 +61,8 @@ with $\{\theta_m,w_m\}$ identified from data via **generalized Prony/Vector-Fitt
 ### 2.3 Continuum coarse-graining
 On scales $\gg a$ (mean link length), a wave-with-memory PDE emerges:
 $$
-\partial_t^2 \phi + 2\Gamma\, \partial_t \phi + \Omega^2 \phi
-- \nabla \cdot \Big(c^2\, n_\mathrm{eff}^{-2}(x)\,\nabla \phi\Big)
+\partial_t^2 \phi + 2\Gamma\, \partial_t \phi + \Omega^2 \phi \\
+- \nabla \cdot \Big(c^2\, n_\mathrm{eff}^{-2}(x)\,\nabla \phi\Big) \\
 + \int_0^t M(x,t-t')\,\phi(t')\,dt' = \Xi(x,t)
 $$
 
