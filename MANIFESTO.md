@@ -23,7 +23,7 @@ There exists a non-negative functional $\mathcal{K}[q]$ (e.g., Kolmogorov-Sinai 
 $$\frac{d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D}, \qquad \mathcal{D}\ge 0.$$
 In closed subsystems $\Phi_\mathrm{in}=\Phi_\mathrm{out}=0\Rightarrow d\mathcal{K}/dt\le 0$.
 
-- **A1 – Local delayed dynamics.** *(microscopic, possibly complex amplitudes $q_i\in\mathbb{C}$ )*
+- **A1 – Local delayed dynamics.** *(microscopic, possibly complex amplitudes $q_i\in\mathbb{C}$)*
 $$\ddot q_i + 2\gamma_i \dot q_i + \omega_i^2 q_i + \alpha_i |q_i|^2 q_i
 = \sum_{j\in \mathcal{N}(i)} K_{ij}\, \sin\!\big(A_{ij}(t)\big)\, q_j\!\big(t-\tau_{ij}(t)\big) + \xi_i(t).$$
 Here $\xi_i$ is a weak, broadband noise (“quantum floor”).
@@ -50,30 +50,23 @@ Block-averaging over mesoscopic patches yields a **wave-with-memory** PDE with k
 ## 2) Working equations and continuum limit
 
 ### 2.1 Discrete graph (micro)
-$$
-\ddot q_i + 2\gamma \dot q_i + \omega_0^2 q_i + \alpha |q_i|^2 q_i
-= \sum_{j} K_{ij}\, \sin\!\big(A_{ij}\big)\, q_j\!\big(t-\tau_{ij}\big) + \xi_i(t),
-\qquad \tau_{ij}=\tau_0 + \delta\tau_{ij}[q,\rho].
-$$
+$$\ddot q_i + 2\gamma \dot q_i + \omega_0^2 q_i + \alpha |q_i|^2 q_i = \sum_{j} K_{ij}\, \sin\!\big(A_{ij}\big)\, q_j\!\big(t-\tau_{ij}\big) + \xi_i(t), \qquad \tau_{ij}=\tau_0 + \delta\tau_{ij}[q,\rho].$$
 
 ### 2.2 Memory-compressed surrogate
 Replace pure delays by a finite Prony chain
-$$
-\dot y_m = -\theta_m y_m + \beta_m q, \qquad
-q(t-\tau)\;\approx\; \sum_m w_m\, y_m(t), \quad \sum_m w_m \approx 1,
-$$
+$$\dot y_m = -\theta_m y_m + \beta_m q, \qquad q(t-\tau)\;\approx\; \sum_m w_m\, y_m(t), \quad \sum_m w_m \approx 1,$$
+
 with $\{\theta_m,w_m\}$ identified from data via **generalized Prony/Vector-Fitting** to preserve spectra and decay.
 
 ### 2.3 Continuum coarse-graining
 On scales $\gg a$ (mean link length), a wave-with-memory PDE emerges:
-$$
-\begin{aligned}
+$$\begin{aligned}
 \partial_t^2 \phi \;+\; 2\Gamma\, \partial_t \phi \;+\; \Omega^2 \phi
 \;&-\; \nabla\!\cdot\!\Big(c^2\, n_\mathrm{eff}^{-2}(x)\,\nabla \phi\Big)
 \;+\; \int_0^t M\big(x,t-t'\big)\,\phi(t')\,dt' \\
 &=\; \Xi(x,t),
-\end{aligned}
-$$
+\end{aligned}$$
+
 where $c \approx a/\tau_0$ is the emergent causal speed, $n_\mathrm{eff}(x)$ encodes averaged delay gradients (horizons occur when **flow – group speed** changes sign with $v_g=c/n_\mathrm{eff}$), and $M$ inherits the memory poles from $\{\theta_m,w_m\}$.
 *Note:* $\Gamma$ is the **effective** macroscopic damping obtained by coarse-graining $\gamma$.
 
