@@ -1,9 +1,10 @@
 # src/model.py
 # -*- coding: utf-8 -*-
 """
-Core implementation of the DOFT model, refactored to fix Phase 1 QA issues.
+Core implementation of the DOFT model, refactored for Phase 1 QA issues.
 - Implements a robust, physical pulse-front detection for c_eff.
 - Ensures LPC metrics are correctly calculated and returned.
+- Added robust numerical error handling for polyfit.
 """
 
 import os
@@ -142,10 +143,9 @@ class DOFTModel:
 
         rl = RateLogger(self.log_interval)
         
-        # Robust wavefront detection
         noise_floor = xi_amp if xi_amp > 0 else 1e-5
         thresholds = [3 * noise_floor, 5 * noise_floor]
-        cross_times = {T: {} for T in thresholds} # {threshold: {radius: time}}
+        cross_times = {T: {} for T in thresholds}
 
         for t in range(self.steps):
             self._step_euler(xi_amp)
@@ -161,36 +161,39 @@ class DOFTModel:
                 
                 for r_int in np.unique(radii.astype(int)):
                     if r_int not in cross_times[T]:
-                         # Enforce causality: time must be non-decreasing
                         last_time = max(cross_times[T].values()) if cross_times[T] else 0
                         current_time = t * self.dt
                         if current_time >= last_time:
                             cross_times[T][r_int] = current_time
 
             max_q = q_abs.max()
-            rl.tick(t + 1, max_q=max_q)
+            rl.tick(t + 1, max_q=f"{max_q:.3f}")
 
-        # Fit line to (time, radius) data
         all_fits = []
         a_mean = self.cfg['a']['mean']
         
         for T in thresholds:
             points = sorted(cross_times[T].items())
-            # Use only the expanding part of the wave, before reflections
             valid_points = [p for p in points if p[0] < L * 0.4]
             if len(valid_points) < 5: continue
 
             radii = np.array([p[0] for p in valid_points]) * a_mean
             times = np.array([p[1] for p in valid_points])
             
-            # Fit radius = c * time + intercept
+            # **DEFINITIVE FIX**: Add checks for numerical stability before fitting.
+            if np.any(np.isnan(radii)) or np.any(np.isnan(times)): continue
+            if times.size < 2 or radii.size < 2: continue
+            if np.all(times == times[0]): continue # Avoid division by zero if all times are the same
+
             try:
+                # Use a robust fitting method and catch potential errors
                 slope, _ = np.polyfit(times, radii, 1)
-                if slope > 0: # Physical speed must be positive
+                if slope > 0 and np.isfinite(slope):
                     all_fits.append(slope)
-            except np.linalg.LinAlgError:
+            except (np.linalg.LinAlgError, ValueError):
+                # If polyfit fails for any reason, just skip this threshold
                 continue
 
-        ceff_pulse = np.mean(all_fits) if all_fits else -1.0
+        ceff_pulse = np.mean(all_fits) if all_fits else np.nan
         
         return {"ceff_pulse": ceff_pulse, "anisotropy_max_pct": 0.0}, []
