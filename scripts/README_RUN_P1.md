@@ -61,17 +61,15 @@ The scripts/run_phase1.sh script is the single entry point you need. It handles 
 
 To run all Phase 1 simulations using your machine's CPU cores:
 
-# The USE_GPU=0 environment variable tells the script not to look for a GPU.
 # N_JOBS=4 will use 4 processes in parallel. Adjust this to the number of cores on your machine.
-USE_GPU=0 N_JOBS=4 bash scripts/run_phase1.sh
+N_JOBS=4 bash scripts/run_phase1.sh
 
 3.3. GPU Execution
 
 If your machine has a CUDA-compatible NVIDIA GPU and you have installed the PyTorch wheels, you can accelerate the simulation as follows:
 
-# USE_GPU=1 will enable GPU usage.
-# In GPU mode, N_JOBS is typically kept at 1.
-USE_GPU=1 N_JOBS=1 bash scripts/run_phase1.sh
+# N_JOBS is typically kept at 1.
+N_JOBS=1 bash scripts/run_phase1.sh
 
 The script will verify if a GPU is available. If not, it will notify you and proceed with the execution on the CPU.
 

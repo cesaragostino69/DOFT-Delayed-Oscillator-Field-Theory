@@ -120,3 +120,15 @@ The dissipative term \(-\gamma P\) **must** affect dynamics. Minimal test: with 
   "fft_params": {"st_grid": [64, 256], "k_fit_tol_pct": 5},
   "windowing": {"len_steps": 2048, "overlap": 0.5, "detrend": "linear"}
 }
+
+---
+
+## Development Guidelines — manifest1_p1_DOFT
+
+**Scope:** Basic rules for contributing to the DOFT project.
+
+1. **PEP 8 compliance:** Ensure all code follows the PEP 8 style guidelines.
+2. **Tests required:** Include tests for new features and bug fixes.
+3. **Pre-commit checks:** Run `pytest` and other linters before submitting a commit.
+4. **Commit hygiene:** Use clear commit messages that describe the change and its motivation.
+5. **Design notes:** Document relevant design decisions in code comments or in the documentation.

@@ -96,6 +96,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Development Guidelines
+
+Take a time to see this document [docs/manifest1_p1_DOFT](docs/manifest1_p1_DOFT) for guilines to participate in this project.
+
+
 ### Reproduce a short sweep
 
 ```bash
