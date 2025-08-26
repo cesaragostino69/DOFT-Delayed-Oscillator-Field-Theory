@@ -123,7 +123,7 @@ $$n_\mathrm{eff}^2(x) \simeq 1 + \alpha_\tau\, \rho(x)$$
   Rays follow Fermat in $n_{\mathrm{eff}}(x)$. A **horizon** forms where a drift $u$ exceeds local wave group speed $v_g = c / n_{\mathrm{eff}}$.
 
 - **Hawking analogue.**  
-  Rays follow Fermat in $T_H \propto \bigl|\partial_x(u - v_g)\bigr|_{x_H}$. A **horizon** forms where a drift $u$ exceeds local wave group speed $v_g = c / n_{\mathrm{eff}}$.
+  Rays follow Fermat in $|\partial_x n_{\mathrm{eff}}|$. A **horizon** forms where a drift $u$ exceeds local wave group speed $v_g = c / n_{\mathrm{eff}}$.
 
 - **Hawking analogue.** 
 $$T_H \propto \bigl|\partial_x(u - v_g)\bigr|_{x_H}$$
