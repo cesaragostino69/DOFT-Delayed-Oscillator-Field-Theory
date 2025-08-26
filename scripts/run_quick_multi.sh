@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OUT_ROOT="${1:-runs/quick_gpu}"
+OUT_ROOT="${1:-runs/quick}"
 PAR="${PAR:-4}"   # número de shards en paralelo
 
 for i in $(seq 0 $((PAR-1))); do

@@ -17,12 +17,9 @@ Opcion B (sin git, segura):
   python scripts/apply_patch_v12b.py
   pip install -r requirements.txt
 
-Verificar CUDA:
-  python scripts/doctor_cuda.py
-
-Correr en Jetson (varios shards para usar GPU):
-  USE_GPU=1 PAR=6 bash scripts/run_quick_multi.sh runs/quick_gpu
-  python scripts/merge_runs.py runs/quick_gpu_shard* --out runs/quick_gpu_merged
+  Correr shards en paralelo:
+    PAR=6 bash scripts/run_quick_multi.sh runs/quick
+    python scripts/merge_runs.py runs/quick_shard* --out runs/quick_merged
 
 Cambios clave:
 - requirements.txt: agrega typing-extensions>=4.8

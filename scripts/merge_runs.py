@@ -11,7 +11,7 @@ def coerce_numeric(df, cols):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("inputs", nargs="+", help="directorios o patrones con shards (ej: runs/quick_gpu_shard*)")
+    ap.add_argument("inputs", nargs="+", help="directorios o patrones con shards (ej: runs/quick_shard*)")
     ap.add_argument("--out", required=True, help="directorio de salida")
     args = ap.parse_args()
 
