@@ -61,12 +61,10 @@ with $\{\theta_m,w_m\}$ identified from data via **generalized Prony/Vector-Fitt
 ### 2.3 Continuum coarse-graining
 On scales $\gg a$ (mean link length), a wave-with-memory PDE emerges:
 $$
-\begin{aligned}
-\partial_t^2 \phi + 2\Gamma\, \partial_t \phi + \Omega^2 \phi
--\nabla\!\cdot\!\Big(c^2\, n_\mathrm{eff}^{-2}(x)\,\nabla \phi\Big)
-+ \int_0^t M\big(x,t-t'\big)\,\phi(t')\,dt' 
-&= \Xi(x,t)
-\end{aligned}
+\partial_t^2 \phi + 2\Gamma\,\partial_t \phi + \Omega^2 \phi
+-\nabla\!\cdot\!\big(c^2\,n_{\mathrm{eff}}^{-2}(x)\,\nabla \phi\big)
++\int_0^t M\!\left(x,t-t'\right)\,\phi(t')\,\mathrm{d}t'
+= \Xi(x,t).
 $$
 
 where $c \approx a/\tau_0$ is the emergent causal speed, $n_\mathrm{eff}(x)$ encodes averaged delay gradients (horizons occur when **flow – group speed** changes sign with $v_g=c/n_\mathrm{eff}$), and $M$ inherits the memory poles from $\{\theta_m,w_m\}$.
