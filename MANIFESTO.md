@@ -63,8 +63,10 @@ $$
 
 ### 2.2 Memory‑compressed surrogate
 Replace pure delays by a finite Prony chain
+
 $$\dot y_m = -\theta_m y_m + \beta_m q,\qquad
 \text{use}\;\; q(t-\tau)\approx \sum_m w_m y_m(t),$$
+
 with $\sum_m w_m \approx 1$. Identify $\{\theta_m,w_m\}$ from data via **generalized Prony/Vector‑Fitting** to preserve spectra and decay.
 
 ### 2.3 Continuum coarse‑graining
