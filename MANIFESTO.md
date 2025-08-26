@@ -56,28 +56,27 @@
 ## 2) Working equations and continuum limit
 
 ### 2.1 Discrete graph (micro)
-\[
-\ddot q_i + 2\gamma \dot q_i + \omega_0^2 q_i + \alpha |q_i|^2 q_i
-= \sum_{j} K_{ij}\, \sin(A_{ij})\, q_j(t-\tau_{ij}) + \xi_i(t),
+$$
+\ddot q_i + 2\gamma \dot q_i + \omega_0^2 q_i + \alpha |q_i|^2 q_i = \sum_{j} K_{ij}\, \sin(A_{ij})\, q_j(t-\tau_{ij}) + \xi_i(t),
 \quad \tau_{ij}=\tau_0 + \delta\tau_{ij}[q,\rho].
-\]
+$$
 
 ### 2.2 Memory‑compressed surrogate
 Replace pure delays by a finite Prony chain
-\[
+$$
 \dot y_m = -\theta_m y_m + \beta_m q,\qquad
 \text{use}\;\; q(t-\tau)\approx \sum_m w_m y_m(t),
-\]
+$$
 with $\sum_m w_m \approx 1$. Identify $\{\theta_m,w_m\}$ from data via **generalized Prony/Vector‑Fitting** to preserve spectra and decay.
 
 ### 2.3 Continuum coarse‑graining
 On scales $\gg a$ (mean link length):
-\[
+$$
 \partial_t^2 \phi + 2\Gamma \partial_t \phi + \Omega^2 \phi
 - \nabla\!\cdot\!\big(c^2 n_\mathrm{eff}^{-2}(x)\nabla \phi\big)
 + \int_0^t M(x,t-t')\,\phi(t')\,dt'
 = \Xi(x,t).
-\]
+$$
 - $c \approx a/\tau_0$ is the emergent causal speed.  
 - $n_\mathrm{eff}(x)$ encodes averaged delay gradients; horizons occur when **flow – group speed** changes sign.  
 - $M$ is the memory kernel inherited from $\{\theta_m,w_m\}$.
