@@ -5,6 +5,7 @@ Main entry point for running DOFT Phase 1 simulations.
 - Correctly generates the full parameter sweep.
 - Ensures all LPC metrics are logged according to the data contract.
 - Added robust handling of NaN/inf values and individual run failures.
+- Passes the output directory to each run for detailed error logging.
 """
 
 import os
@@ -30,10 +31,15 @@ def run_one_simulation(cfg, out_dir):
         experiment_type = cfg.get("experiment_type", "chaos")
 
         run_result, blocks_data = {}, []
+        # Pass the output directory to the model's run methods
         if experiment_type == "pulse":
-            run_result, blocks_data = model.run_pulse_experiment(xi_amp=float(cfg.get("xi_amp", 1e-4)))
+            run_result, blocks_data = model.run_pulse_experiment(
+                xi_amp=float(cfg.get("xi_amp", 1e-4)), out_dir=out_dir
+            )
         else:
-            run_result, blocks_data = model.run_chaos_experiment(xi_amp=float(cfg.get("xi_amp", 1e-4)))
+            run_result, blocks_data = model.run_chaos_experiment(
+                xi_amp=float(cfg.get("xi_amp", 1e-4)), out_dir=out_dir
+            )
 
         run_row = {
             "run_id": run_id,
@@ -61,7 +67,7 @@ def run_one_simulation(cfg, out_dir):
         print(f"Config: a={cfg.get('a', {}).get('mean')}, tau={cfg.get('tau0', {}).get('mean')}")
         print(f"Error details: {e}")
         print("--------------------------------------------------------------------")
-        return None, None # Return None to signal failure, preventing a crash
+        return None, None
 
 def main():
     parser = argparse.ArgumentParser(description="DOFT Phase 1 Simulation Runner")
@@ -107,7 +113,6 @@ def main():
         delayed(run_one_simulation)(task_cfg, out_dir) for task_cfg in tqdm(tasks)
     )
 
-    # --- Aggregate and save results robustly using pandas ---
     all_runs = [r[0] for r in results if r is not None and r[0] is not None]
     all_blocks = [b for r in results if r is not None for b in r[1]]
 

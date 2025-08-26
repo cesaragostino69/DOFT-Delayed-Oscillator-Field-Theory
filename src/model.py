@@ -4,12 +4,14 @@
 Core implementation of the DOFT model, refactored for Phase 1 QA issues.
 - Implements a robust, physical pulse-front detection for c_eff.
 - Ensures LPC metrics are correctly calculated and returned.
-- Added robust numerical error handling for polyfit.
+- Added detailed error logging for numerical issues.
 """
 
 import os
 import math
 import numpy as np
+import json
+import datetime
 from .utils import RateLogger, spectral_entropy
 
 try:
@@ -68,6 +70,44 @@ class DOFTModel:
         self.lpc_budget = 0.0
         self.lpc_vcount = 0
 
+    def _log_nan_event(self, out_dir, reason: str, data: dict):
+        """Logs details of a numerical error to a file."""
+        if not out_dir:
+            print(f"# ADVERTENCIA (seed={self.seed}): {reason}")
+            return
+
+        log_file_path = out_dir / f"error_log_seed_{self.seed}.txt"
+        
+        log_message = f"""
+=================================================
+ERROR NUMÉRICO DETECTADO EN LA SIMULACIÓN
+=================================================
+Seed: {self.seed}
+Fecha y Hora: {datetime.datetime.now().isoformat()}
+
+Causa del Error:
+----------------
+{reason}
+
+Configuración de la Simulación:
+-----------------------------
+a: {self.cfg.get('a')}
+tau0: {self.cfg.get('tau0')}
+gamma: {self.cfg.get('gamma')}
+xi_amp: {self.cfg.get('xi_amp')}
+
+Datos que Causaron el Error:
+----------------------------
+{json.dumps(data, indent=2, default=str)}
+
+=================================================
+"""
+        try:
+            with open(log_file_path, "a") as f:
+                f.write(log_message)
+        except Exception as e:
+            print(f"Error al escribir el log de errores: {e}")
+
     def _initialize_state(self, mode='chaos'):
         if mode == 'chaos':
             self.Q = self.rng.normal(0, 0.5, self.Q.shape).astype(np.float64)
@@ -114,7 +154,7 @@ class DOFTModel:
             return current_chaos, delta_K
         return None, None
 
-    def run_chaos_experiment(self, xi_amp: float):
+    def run_chaos_experiment(self, xi_amp: float, out_dir=None):
         self._initialize_state(mode='chaos')
         rl = RateLogger(self.log_interval)
         blocks_data = []
@@ -129,7 +169,7 @@ class DOFTModel:
         lpc_deltaK_neg_frac = sum(1 for b in blocks_data if b['deltaK'] <= 0) / len(blocks_data) if blocks_data else 1.0
         return {"lpc_vcount": self.lpc_vcount, "lpc_deltaK_neg_frac": lpc_deltaK_neg_frac}, blocks_data
 
-    def run_pulse_experiment(self, xi_amp: float):
+    def run_pulse_experiment(self, xi_amp: float, out_dir=None):
         self._initialize_state(mode='pulse')
         L = self.Q.shape[1]
         center = L // 2
@@ -180,20 +220,29 @@ class DOFTModel:
             radii = np.array([p[0] for p in valid_points]) * a_mean
             times = np.array([p[1] for p in valid_points])
             
-            # **DEFINITIVE FIX**: Add checks for numerical stability before fitting.
-            if np.any(np.isnan(radii)) or np.any(np.isnan(times)): continue
-            if times.size < 2 or radii.size < 2: continue
-            if np.all(times == times[0]): continue # Avoid division by zero if all times are the same
+            if np.any(np.isnan(radii)) or np.any(np.isnan(times)):
+                self._log_nan_event(out_dir, "Datos de frente de onda contienen NaN.", {"times": times.tolist(), "radii": radii.tolist()})
+                continue
+            if times.size < 2 or radii.size < 2:
+                continue
+            if np.all(times == times[0]):
+                self._log_nan_event(out_dir, "Todos los tiempos de cruce son idénticos.", {"times": times.tolist(), "radii": radii.tolist()})
+                continue
 
             try:
-                # Use a robust fitting method and catch potential errors
                 slope, _ = np.polyfit(times, radii, 1)
                 if slope > 0 and np.isfinite(slope):
                     all_fits.append(slope)
-            except (np.linalg.LinAlgError, ValueError):
-                # If polyfit fails for any reason, just skip this threshold
+                else:
+                    self._log_nan_event(out_dir, f"El ajuste de pendiente resultó en un valor no físico (slope={slope}).", {"times": times.tolist(), "radii": radii.tolist()})
+            except (np.linalg.LinAlgError, ValueError) as e:
+                self._log_nan_event(out_dir, f"np.polyfit falló con el error '{e}'.", {"times": times.tolist(), "radii": radii.tolist()})
                 continue
 
-        ceff_pulse = np.mean(all_fits) if all_fits else np.nan
+        if not all_fits:
+            self._log_nan_event(out_dir, "No se pudieron obtener ajustes de velocidad válidos de ningún umbral.", {"cross_times": cross_times})
+            ceff_pulse = np.nan
+        else:
+            ceff_pulse = np.mean(all_fits)
         
         return {"ceff_pulse": ceff_pulse, "anisotropy_max_pct": 0.0}, []
