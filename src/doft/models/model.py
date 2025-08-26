@@ -12,18 +12,8 @@ import math
 import numpy as np
 import json
 import datetime
-from .utils import RateLogger, spectral_entropy
+from ..utils.utils import RateLogger, spectral_entropy
 
-<<<<<<< ours
-try:
-    import torch
-    _TORCH_OK = True
-except ImportError:
-    torch = None
-    _TORCH_OK = False
-
-class DOFTModel:
-=======
 DEFAULT_DTYPE = "float64"
 def _as_dtype(name):
     if name in ("float64","double","np.float64"): return "float64"
@@ -33,12 +23,11 @@ def _as_dtype(name):
 
 import numpy as np
 
-from .utils import RateLogger, spectral_entropy, anisotropy_from_ceff_map
+from ..utils.utils import RateLogger, spectral_entropy, anisotropy_from_ceff_map
 
 
 class DOFTModel:
     # CPU-only core with 3-exponential Prony memory, c_eff map, hbar_eff, LPC check.
->>>>>>> theirs
     def __init__(self, cfg: dict):
         self.cfg = cfg
         self.seed = int(cfg.get("seed", 0))
@@ -46,159 +35,6 @@ class DOFTModel:
         self.steps = int(cfg.get("steps", 50_000))
         self.dt = float(cfg.get("dt", 1e-3))
         self.K = float(cfg.get("K", 0.3))
-<<<<<<< ours
-        self.gamma = float(cfg.get("gamma", 0.01))
-        self.batch = 1
-        self.log_interval = int(cfg.get("log_interval", 30))
-
-        L = int(cfg.get("L", 128))
-        a_mean = float(cfg["a"]["mean"])
-        a_std = float(cfg["a"]["std"])
-        tau_mean = float(cfg["tau0"]["mean"])
-        tau_std = float(cfg["tau0"]["std"])
-
-        self.a_map = self.rng.normal(a_mean, a_std, size=(L, L)).astype(np.float64)
-        self.tau_map = self.rng.normal(tau_mean, tau_std, size=(L, L)).astype(np.float64)
-
-        self.device = "cpu"
-        self.engine = "numpy"
-        if _TORCH_OK and bool(int(os.environ.get("USE_GPU", "0"))):
-            if torch.cuda.is_available():
-                self.device = "cuda"
-                self.engine = "torch"
-                torch.manual_seed(self.seed)
-                torch.set_default_dtype(torch.float64)
-
-        prony_cfg = cfg.get("prony_memory", {"weights": [0.6, 0.3, 0.1], "thetas": [1e-3, 1e-2, 1e-1]})
-        self.prony_w = np.array(prony_cfg["weights"], dtype=np.float64).reshape(1, -1)
-        self.prony_theta = np.array(prony_cfg["thetas"], dtype=np.float64).reshape(1, -1)
-        num_memory_modes = self.prony_w.shape[1]
-
-        self.Q = np.zeros((self.batch, L, L), dtype=np.float64)
-        self.P = np.zeros((self.batch, L, L), dtype=np.float64)
-        self.Y = np.zeros((self.batch, L, L, num_memory_modes), dtype=np.float64)
-
-        if self.engine == "torch":
-            self.Q = torch.from_numpy(self.Q).to(self.device)
-            self.P = torch.from_numpy(self.P).to(self.device)
-            self.Y = torch.from_numpy(self.Y).to(self.device)
-            self.prony_w = torch.from_numpy(self.prony_w).to(self.device)
-            self.prony_theta = torch.from_numpy(self.prony_theta).to(self.device)
-
-        self.lpc_budget = 0.0
-        self.lpc_vcount = 0
-
-    def _log_nan_event(self, out_dir, reason: str, data: dict):
-        """Logs details of a numerical error to a file."""
-        if not out_dir:
-            print(f"# ADVERTENCIA (seed={self.seed}): {reason}")
-            return
-
-        log_file_path = out_dir / f"error_log_seed_{self.seed}.txt"
-        
-        log_message = f"""
-=================================================
-ERROR NUMÉRICO DETECTADO EN LA SIMULACIÓN
-=================================================
-Seed: {self.seed}
-Fecha y Hora: {datetime.datetime.now().isoformat()}
-
-Causa del Error:
-----------------
-{reason}
-
-Configuración de la Simulación:
------------------------------
-a: {self.cfg.get('a')}
-tau0: {self.cfg.get('tau0')}
-gamma: {self.cfg.get('gamma')}
-xi_amp: {self.cfg.get('xi_amp')}
-
-Datos que Causaron el Error:
-----------------------------
-{json.dumps(data, indent=2, default=str)}
-
-=================================================
-"""
-        try:
-            with open(log_file_path, "a") as f:
-                f.write(log_message)
-        except Exception as e:
-            print(f"Error al escribir el log de errores: {e}")
-
-    def _initialize_state(self, mode='chaos'):
-        if mode == 'chaos':
-            self.Q = self.rng.normal(0, 0.5, self.Q.shape).astype(np.float64)
-        elif mode == 'pulse':
-            self.Q.fill(0)
-        self.P.fill(0)
-        self.Y.fill(0)
-        if self.engine == "torch":
-            self.Q = torch.from_numpy(self.Q).to(self.device)
-            self.P = torch.from_numpy(self.P).to(self.device)
-            self.Y = torch.from_numpy(self.Y).to(self.device)
-
-    def _step_euler(self, xi_amp: float):
-        if self.engine == "torch":
-            Q_reshaped = self.Q.unsqueeze(-1)
-            self.Y += self.dt * (-self.Y / self.prony_theta + self.prony_w * Q_reshaped)
-            M_term = torch.sum(self.Y, dim=-1)
-            xi = torch.randn_like(self.Q) * xi_amp
-        else:
-            Q_reshaped = self.Q[..., np.newaxis]
-            self.Y += self.dt * (-self.Y / self.prony_theta + self.prony_w * Q_reshaped)
-            M_term = np.sum(self.Y, axis=-1)
-            xi = self.rng.normal(0, xi_amp, self.Q.shape).astype(np.float64)
-
-        self.P += self.dt * (-self.K * self.Q + M_term - self.gamma * self.P + xi)
-        self.Q += self.dt * self.P
-
-    def _monitor_and_apply_lpc(self, t, win_size=1024):
-        if t > 0 and t % win_size == 0:
-            q_data = self.Q.cpu().numpy() if self.engine == "torch" else self.Q
-            current_chaos = spectral_entropy(q_data)
-            if t == win_size:
-                self.lpc_budget = current_chaos
-                return current_chaos, 0.0
-
-            delta_K = current_chaos - self.lpc_budget
-            if delta_K > 1e-4:
-                self.lpc_vcount += 1
-                if self.engine == "torch":
-                    with torch.no_grad(): self.prony_w[0, 0] *= 0.999
-                else: self.prony_w[0, 0] *= 0.999
-            
-            self.lpc_budget = min(self.lpc_budget, current_chaos)
-            return current_chaos, delta_K
-        return None, None
-
-    def run_chaos_experiment(self, xi_amp: float, out_dir=None):
-        self._initialize_state(mode='chaos')
-        rl = RateLogger(self.log_interval)
-        blocks_data = []
-
-        for t in range(self.steps):
-            self._step_euler(xi_amp)
-            K_metric, deltaK = self._monitor_and_apply_lpc(t)
-            if K_metric is not None:
-                blocks_data.append({"window_id": t, "K_metric": K_metric, "deltaK": deltaK})
-            rl.tick(t + 1, K=self.lpc_budget, dK=deltaK or 0, breaks=self.lpc_vcount)
-
-        lpc_deltaK_neg_frac = sum(1 for b in blocks_data if b['deltaK'] <= 0) / len(blocks_data) if blocks_data else 1.0
-        return {"lpc_vcount": self.lpc_vcount, "lpc_deltaK_neg_frac": lpc_deltaK_neg_frac}, blocks_data
-
-    def run_pulse_experiment(self, xi_amp: float, out_dir=None):
-        self._initialize_state(mode='pulse')
-        L = self.Q.shape[1]
-        center = L // 2
-        
-        y, x = np.ogrid[-center:L-center, -center:L-center]
-        pulse = np.exp(-(x*x + y*y) / (2 * 4.0**2)).astype(np.float64)
-        if self.engine == "torch":
-            self.Q[0, :, :] = torch.from_numpy(pulse).to(self.device)
-        else:
-            self.Q[0, :, :] = pulse
-=======
         self.batch = int(cfg.get("batch_replicas", 64))
         self.log_interval = int(cfg.get("log_interval", 60))
 
@@ -242,7 +78,6 @@ Datos que Causaron el Error:
 
     def run(self, gamma: float, xi_amp: float, seed: int, out_dir: str) -> dict:
         np.random.seed(int(seed))
->>>>>>> theirs
 
         rl = RateLogger(self.log_interval)
         
