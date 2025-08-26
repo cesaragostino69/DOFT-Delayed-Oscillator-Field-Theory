@@ -87,14 +87,10 @@ $$\frac{\mathrm{Var}(\hbar_\mathrm{eff})}{\big(\mathbb{E}[\hbar_\mathrm{eff}]\bi
 
 - **Newton constant $G$ as delay-sensitivity map.**
 In the continuum,
-$$
-n_\mathrm{eff}^2(x) \;\simeq\; 1 \;+\; \alpha_\tau\, \rho(x),
-\qquad \alpha_\tau \equiv \frac{\partial n_\mathrm{eff}^2}{\partial \rho}.
-$$
+$$n_\mathrm{eff}^2(x) \;\simeq\; 1 \;+\; \alpha_\tau\, \rho(x),
+\qquad \alpha_\tau \equiv \frac{\partial n_\mathrm{eff}^2}{\partial \rho}.$$
 Linearizing ray bending and matching to weak-field GR gives a constitutive link
-$$
-G \;\propto\; c^2\,\alpha_\tau,
-$$
+$$G \;\propto\; c^2\,\alpha_\tau,$$
 after proper normalization. This is a working **hypothesis to be derived** from the microdynamics.
 
 ---
@@ -103,10 +99,9 @@ after proper normalization. This is a working **hypothesis to be derived** from 
 
 - **Holonomy as short-loop physics.**
 Small cycles around “cores” induce phase defects that shift effective Rydberg energies:
-$$
-E_{n\ell} \;\approx\; -\frac{R_\mathrm{eff}}{(n-\delta_\ell)^2}, \qquad
-\delta_\ell \;\text{from short-loop holonomies and local polarizability}.
-$$
+$$E_{n\ell} \;\approx\; -\frac{R_\mathrm{eff}}{(n-\delta_\ell)^2}, \qquad
+\delta_\ell \;\text{from short-loop holonomies and local polarizability}.$$
+
 - **Predictions:**
 (i) Collapse of line families when scaling $\nu_{m}$ by $(n^\*)^3 R_\mathrm{eff}$;
 (ii) linear trends of $\delta_\ell$ vs. $1/(n^\*)^2$ with slopes correlated to ionic core **static polarizability** $\alpha_0$;
@@ -120,9 +115,9 @@ $$
 Rays follow Fermat in $n_{\mathrm{eff}}(x)$. A **horizon** forms where a drift $u$ exceeds local wave group speed $v_g = c / n_{\mathrm{eff}}$.
 
 - **Hawking analogue.**
-$$
-T_H \;\propto\; \bigl|\partial_x\big(u - v_g\big)\bigr| \;\;\text{at}\;\; x_H.
-$$
+
+$$T_H \;\propto\; \bigl|\partial_x\big(u - v_g\big)\bigr| \;\;\text{at}\;\; x_H.$$
+
 In DOFT this depends on $|\partial_x n_{\mathrm{eff}}|$, which is set by delay gradients.
 
 - **Antimatter.**
