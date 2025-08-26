@@ -126,10 +126,6 @@ $$n_\mathrm{eff}^2(x) \simeq 1 + \alpha_\tau\, \rho(x)$$
 $T_H \propto \bigl|\partial_x(u - v_g)\bigr| \text{ at } x_H$.
   In DOFT this depends on $|\partial_x n_{\mathrm{eff}}|$, which is set by delay gradients.
 
-- **Hawking analogue.** 
-$T_H \propto \bigl|\partial_x(u - v_g)\bigr| \text{ at } x_H$
-  In DOFT this depends on $|\partial_x n_{\mathrm{eff}}|$, which is set by delay gradients.
-
 - **Antimatter.**  
   Curvature depends on the **magnitude** of delay gradients, not the sign of phase. Prediction: **same gravitational response** for matter/antimatter at leading order.
 
