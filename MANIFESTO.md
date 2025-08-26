@@ -87,21 +87,20 @@ $- \nabla\!\cdot\!\big(c^2 n_\mathrm{eff}^{-2}(x)\nabla \phi\big) + \int_0^t M(x
 
 - **Planck constant $\hbar$ as action floor.**  
   The stationary stochastic dynamics with A0+A4′ sustains **limit‑cycle ensembles** whose phase‑space area per cycle stabilizes to
-$$
-  A_0 \equiv \oint p\,dq \approx 2\pi \hbar_\mathrm{eff}.
-$$
+
+$$A_0 \equiv \oint p\,dq \approx 2\pi \hbar_\mathrm{eff}.$$
+  
   We estimate $\hbar_\mathrm{eff}$ from local fluctuations
   $\hbar_\mathrm{eff}\sim \sigma_Q \sigma_P$
   and test **self‑averaging** scaling
-$$
-  \mathrm{Var}(\hbar_\mathrm{eff})/\mathbb{E}[\hbar_\mathrm{eff}]^2 \sim N^{-\beta_\hbar}.
-$$
+
+$$\mathrm{Var}(\hbar_\mathrm{eff})/\mathbb{E}[\hbar_\mathrm{eff}]^2 \sim N^{-\beta_\hbar}.$$
 
 - **Newton constant $G$ as delay‑sensitivity map.**  
   In the continuum,
-$$
-  n_\mathrm{eff}^2(x) \simeq 1 + \alpha_\tau\, \rho(x)
-$$
+
+$$n_\mathrm{eff}^2(x) \simeq 1 + \alpha_\tau\, \rho(x)$$
+
   with $\alpha_\tau = \partial n_\mathrm{eff}^2/\partial \rho$. Linearizing ray bending and matching to weak‑field GR gives a constitutive link $G \propto c^2\,\alpha_\tau$ after proper normalization. This is a working **hypothesis to be derived** from the microdynamics.
 
 ---
@@ -110,10 +109,8 @@ $$
 
 - **Holonomy as short‑loop physics.**  
   Small cycles around “cores” induce phase defects that shift effective Rydberg energies:
-  \[
-  E_{n\ell} \approx -\frac{R_\mathrm{eff}}{(n-\delta_\ell)^2},\qquad
-  \delta_\ell \;\text{from short-loop holonomies and local polarizability}.
-  \]
+  $$E_{n\ell} \approx -\frac{R_\mathrm{eff}}{(n-\delta_\ell)^2},\qquad
+  \delta_\ell \;\text{from short-loop holonomies and local polarizability}.$$
 - **Predictions:**  
   (i) Collapse of line families when scaling $\nu_{m}$ by $(n^\*)^3 R_\mathrm{eff}$;  
   (ii) linear trends of $\delta_\ell$ vs. $1/(n^\*)^2$ with slopes correlated to ionic core **static polarizability** $\alpha_0$;  
