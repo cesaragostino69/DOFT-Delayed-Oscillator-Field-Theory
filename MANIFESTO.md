@@ -21,9 +21,13 @@
 - **A0 – Law of Preservation of Chaos (LPC).**  
   There exists a non‑negative functional $\mathcal{K}[q]$ (e.g., Kolmogorov‑Sinai entropy rate proxy or sum of positive Lyapunov exponents) with balance
   
+
   $$
-  \frac {d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D},
+  \ddot q_i + 2\gamma \dot q_i + \omega_0^2 q_i + \alpha |q_i|^2 q_i = \sum_{j} K_{ij}\, \sin(A_{ij})\, q_j(t-\tau_{ij}) + \xi_i(t),
+  \quad \tau_{ij}=\tau_0 + \delta\tau_{ij}[q,\rho].
   $$
+  
+  $$\frac{d\mathcal{K}}{dt} = \Phi_\mathrm{in} - \Phi_\mathrm{out} - \mathcal{D},$$
 
   where $\mathcal{D}\ge 0$ captures dissipation/regularization. In closed subsystems $\Phi_\mathrm{in}=\Phi_\mathrm{out}=0\Rightarrow d\mathcal{K}/dt\le 0$.
 
