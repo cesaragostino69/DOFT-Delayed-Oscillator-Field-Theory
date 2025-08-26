@@ -18,7 +18,7 @@ import itertools
 import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
-from .model import DOFTModel
+from .doft.models.model import DOFTModel
 
 def run_one_simulation(cfg, out_dir):
     """
@@ -111,6 +111,18 @@ def main():
 
     results = Parallel(n_jobs=args.n_jobs)(
         delayed(run_one_simulation)(task_cfg, out_dir) for task_cfg in tqdm(tasks)
+        cfg = json.load(f)
+    cfg["log_interval"] = args.log_interval
+
+    out_dir = pathlib.Path(args.out); out_dir.mkdir(parents=True, exist_ok=True)
+    gammas = cfg.get("gammas", [0.0, 0.1, 0.3])
+    xis = cfg.get("xis", [0.0, 1e-3, 3e-3])
+    seeds = cfg.get("seeds", [0,1,2])
+    combos = [(g,x,s) for g in gammas for x in xis for s in seeds]
+    print(f"# backend:{args.backend} | tasks:{len(combos)}")
+
+    rows = Parallel(n_jobs=args.n_jobs, backend=args.backend, max_nbytes=None)(
+        delayed(one)(cfg, g, x, s, str(out_dir)) for (g,x,s) in tqdm(combos)
     )
 
     all_runs = [r[0] for r in results if r is not None and r[0] is not None]
