@@ -115,7 +115,6 @@ $$E_{n\ell} \;\approx\; -\frac{R_\mathrm{eff}}{(n-\delta_\ell)^2}, \qquad
 Rays follow Fermat in $n_{\mathrm{eff}}(x)$. A **horizon** forms where a drift $u$ exceeds local wave group speed $v_g = c / n_{\mathrm{eff}}$.
 
 - **Hawking analogue.**
-
 $$T_H \;\propto\; \bigl|\partial_x\big(u - v_g\big)\bigr| \;\;\text{at}\;\; x_H.$$
 
 In DOFT this depends on $|\partial_x n_{\mathrm{eff}}|$, which is set by delay gradients.
@@ -159,9 +158,8 @@ Correct: $\hbar, G$ derivations must be **closed**. We outline a stochastic-inva
 
 ### 8.2 Self-averaging of $\hbar_\mathrm{eff}$
 - Partition the network into $d=2,4,8,16,32,\dots$ blocks; compute
-$$
-R(d)=\frac{\mathrm{Var}(\hbar_\mathrm{eff})}{\big(\mathbb{E}[\hbar_\mathrm{eff}]\big)^2}.
-$$
+$$R(d)=\frac{\mathrm{Var}(\hbar_\mathrm{eff})}{\big(\mathbb{E}[\hbar_\mathrm{eff}]\big)^2}.$$
+
 - Fit $\log R = -\beta_\hbar \log N + b$; **expect** $\beta_\hbar \approx 1$ in homogeneous regimes.
 - **Fail** (persistent $\beta_\hbar \ll 1$) → noise is not homogeneous or the coarse-grain model is wrong.
 
