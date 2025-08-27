@@ -24,6 +24,14 @@ def _as_dtype(name):
 
 
 class DOFTModel:
+    """Delayed oscillator field theory model.
+
+    The lattice uses 4-neighbour (von Neumann) coupling with periodic
+    boundary conditions. Delayed interactions are implemented through a
+    circular buffer that stores past values of ``Q`` so that each site can
+    access ``Q[t - \tau_{ij}]`` for its neighbours.
+    """
+
     # CPU-only core with 3-exponential Prony memory, c_eff map, hbar_eff, LPC check.
     def __init__(self, cfg: dict):
         self.cfg = cfg
@@ -65,9 +73,13 @@ class DOFTModel:
         ).reshape(1, 1, 3)
         self.Y = np.zeros((self.L, self.L, 3), dtype=np.float64)
 
-        self.win = int(cfg.get("window", 2048))
+        # Neighbourhood definition: 4-neighbours with periodic boundaries
+        self.neighbour_shifts = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        # Precompute discrete delays in units of dt and size the circular buffer
+        self.tau_steps = np.ceil(self.tau_map / self.dt).astype(int)
+        self.win = int(self.tau_steps.max()) + 1
         self.bufQ = np.zeros((self.L, self.L, self.win), dtype=np.float64)
-        self.bufP = np.zeros((self.L, self.L, self.win), dtype=np.float64)
         self.bidx = 0
 
     def step_euler(self, xi_amp: float):
@@ -76,8 +88,17 @@ class DOFTModel:
         # Broadcast the Prony memory terms across the spatial grid
         self.Y = self.Y + dt * (-self.Y / self.theta + self.w * self.Q[:, :, None])
         Mterm = np.sum(self.Y, axis=2)
+        # Delayed neighbour contribution
+        neighbour_force = np.zeros_like(self.Q)
+        delay_idx = (self.bidx - self.tau_steps) % self.win
+        for dx, dy in self.neighbour_shifts:
+            shifted = np.roll(self.bufQ, shift=(dx, dy, 0), axis=(0, 1, 2))
+            q_delayed = np.take_along_axis(shifted, delay_idx[..., None], axis=2)[..., 0]
+            neighbour_force += self.a_map * q_delayed
+
         self.P = self.P + dt * (
             -self.K * self.Q
+            + neighbour_force
             + Mterm
             + xi
             - self.gamma * self.P
@@ -86,7 +107,6 @@ class DOFTModel:
         self.Q = self.Q + dt * self.P
         j = self.bidx % self.win
         self.bufQ[:, :, j] = self.Q
-        self.bufP[:, :, j] = self.P
         self.bidx += 1
 
     def _to_numpy(self, T):
