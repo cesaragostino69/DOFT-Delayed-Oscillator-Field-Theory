@@ -27,24 +27,6 @@ class RateLogger:
             print(f"t:{dt:6d}s, step:{step}, rate:{rate:.1f}/s, {lbl}", flush=True)
 
 
-def spectral_entropy(x: np.ndarray) -> float:
-    # Simple spectral entropy on a 1D real signal (robust to short input).
-    if x is None or len(x) < 8:
-        return float("nan")
-    x = np.asarray(x, dtype=np.float64)
-    x = x - np.mean(x)
-    if np.allclose(x, 0):
-        return 0.0
-    X = np.fft.rfft(x)
-    P = (np.abs(X) ** 2)
-    s = P.sum()
-    if s <= 0:
-        return 0.0
-    p = P / s
-    p = np.clip(p, 1e-16, 1.0)
-    H = -np.sum(p * np.log(p))
-    return float(H)
-
 
 def anisotropy_from_ceff_map(ceff_map: np.ndarray) -> float:
     # Delta c over c using directional means along x and y.
@@ -59,40 +41,25 @@ def anisotropy_from_ceff_map(ceff_map: np.ndarray) -> float:
 
 
 
-def spectral_entropy(x, eps: float = 1e-12):
-    """
-    Entropía espectral de una serie 1D.
-    - Si x es torch.Tensor: usa torch.fft en el mismo device (GPU si aplica).
-    - Si x es np.ndarray / lista: usa numpy.fft.
-    La base del log es natural; el cambio de base es un factor constante.
-    """
-    try:
-        import torch
-    except Exception:
-        torch = None
-    import numpy as _np
+def spectral_entropy(x, eps: float = 1e-12) -> float:
+    """Simple spectral entropy on a 1D real signal using NumPy.
 
-    # --- torch path ---
-    if torch is not None and isinstance(x, torch.Tensor):
-        if x.numel() == 0:
-            return 0.0
-        x = x - torch.mean(x)
-        X = torch.fft.rfft(x)
-        S = (torch.abs(X) ** 2)
-        Z = torch.clamp(torch.sum(S), min=eps)
-        p = S / Z
-        H = -torch.sum(p * torch.log(torch.clamp(p, min=eps)))
-        return H.item() if x.device.type != "cpu" else float(H)
-
-    # --- numpy path ---
-    x = _np.asarray(x)
-    if x.size == 0:
+    The input is converted to ``float64``. The natural logarithm is used;
+    changing the log base only scales the result by a constant factor.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    if x.size < 8:
+        return float("nan")
+    x = x - np.mean(x)
+    if np.allclose(x, 0):
         return 0.0
-    X = _np.fft.rfft(x - _np.mean(x))
-    S = _np.abs(X) ** 2
-    Z = max(S.sum(), eps)
-    p = S / Z
-    H = -(p * _np.log(_np.clip(p, eps, None))).sum()
+    X = np.fft.rfft(x)
+    P = np.abs(X) ** 2
+    s = P.sum()
+    if s <= 0:
+        return 0.0
+    p = np.clip(P / s, eps, 1.0)
+    H = -np.sum(p * np.log(p))
     return float(H)
 
 

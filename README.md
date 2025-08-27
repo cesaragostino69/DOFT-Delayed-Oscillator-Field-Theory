@@ -1,102 +1,60 @@
-# DOFT — Delayed Oscillator Field Theory
-*Emergent space-time, spectra, and gravity from state-dependent delays*
-
-**Status:** Research Alpha | Open Methodology | Cross-Lab Collaboration
 
 ---
 
-## 1. Overview
+## Falsifiable predictions
 
-This repository hosts the reference implementation, experiments, and analysis pipeline for DOFT—a bottom-up, network-dynamics framework where the building blocks are identical oscillators coupled through retarded links. In DOFT, **space, time, fields, and gravitation are not fundamental objects**; they emerge from the causal pattern of delays and phases on a large graph.
+### P1 — Self-averaging of $c$
 
-The project's goals are:
--   **Theory-to-data:** Derive falsifiable predictions (scalings, collapse laws, stability bounds) from DOFT’s axioms.
--   **Data-to-theory:** Test those predictions with numerics and public datasets, and report success/failure with code-audited, reproducible runs.
+**Claim:** In homogeneous regimes and away from critical clustering, blockwise estimates of $c$ **converge** with scale:
 
-## 2. Core Dynamics (Axioms)
+$$
+\hat c(d) \to \bar c \quad \text{with} \quad \beta_h \approx 1, \; \beta_c \approx 1.
+$$
 
-The theory is built upon a set of core axioms that define the microscopic ontology and dynamics of the system.
+**Test:** compute $\hat c$ on increasing block sizes $d \in \{2,4,8,16,32\}$; fit log–log slope.  
+**Fail signal:** $\beta$ slopes $\ll 1$ or drift of $\bar c$ beyond CI with scale.
 
+### P2 — Inhomogeneous $\hbar_{\text{eff}}$ floor
+
+**Claim:** Coherent communities (graph-theoretic) exhibit a **higher noise floor** reminiscent of an effective $\hbar_{\text{eff}}$.
+
+Operationally:
+
+$$
+\hbar_{\text{eff}} \propto \text{residual variance after best-fit deterministic dynamics}.
+$$
+
+**Test:** detect communities (Louvain) on the coupling graph; compute distribution of residuals per community; correlate with community size.  
+**Fail signal:** no correlation, or inverse trend.
+
+### P3 — LPC in closed vs open
+
+**Claim:** In a closed system, the **chaos functional** $\mathcal{K}$ (Lyapunov density or spectral entropy) is **stationary**:
+
+$$
+\dot{\mathcal{K}} \approx 0
+$$
+
+In open systems:
+
+$$
+\dot{\mathcal{K}} \approx \Phi_{\text{in}} - \Phi_{\text{out}} - \mathcal{D}.
+$$
+
+**Test:** run paired experiments; compare $\dot{\mathcal{K}}$ statistics.  
+**Fail signal:** systematic drift in closed; mismatch in open flux balance.
+
+---
+
+## Core concepts
+=======
 -   **A1 — Local Delayed Dynamics (DDE):** The fundamental equation of motion for a node `i` is a delayed differential equation:
   
     $$\frac{d^2q_i}{dt^2} + 2\gamma_i\frac{dq_i}{dt} + \omega_i^2q_i = \sum_j K_{ij} \sin( q_j(t - \tau_{ij}) - q_i(t) + A_{ij} ) + \xi_i(t)$$
 
--   **A2 — Space-Time as a Delay Map:** The set of delays `{τ_ij}` encodes the causal structure. No background geometry is assumed.
-
--   **A3 — Gauge/Holonomy Principle:** Only loop phases (holonomies) are observable; local phases are gauge.
-
--   **A4′ — Emergent Quantum Floor:** An irreducible action scale, `ħ_eff`, arises statistically from the network’s chaotic, delayed dynamics; it is not imposed.
-
--   **A5 — Gravity from Delay Gradients:** Coarse gradients of `τ(x)` act as an effective refractive index, causing rays to curve and clocks to dilate.
-
+### Prony memory kernel
+=======
 -   **A6 — Coarse-Graining with Memory:** Blocks of oscillators lead to a continuum wave-equation with a memory kernel `M`, implemented via a chain of ODE "memory variables".
 
     $$\frac{\partial^2\phi}{\partial t^2} - c^2\nabla^2\phi + \int_0^t M(t - t') \frac{\partial\phi}{\partial t'}(x,t') dt' = \eta(x,t)$$
 
--   **LPC — Law of Preservation of Chaos:** The chaos budget is channeled and dissipated; the chaos functional does not grow without bounds under closed dynamics.
-
-## 3. Key Experiments & Metrics
-
-We test the theory by measuring specific, emergent quantities and comparing them against predictions.
-
--   **`hbar_eff` Self-Averaging:**
-    -   **Quantity:** `hbar_eff ∝ σ_Q * σ_P`.
-    -   **Test:** Block-averaging across mesh scales. We fit the relative variance `R ~ N^(-β_h)`.
-    -   **Prediction:** `β_h ≈ 1` indicates strong self-averaging.
-
--   **Isotropy and Stability:**
-    -   **Quantity:** `(Δc)/c = |c_x - c_y| / c_bar`.
-    -   **Expectation:** `(Δc)/c ≪ 10⁻³` after transients, with zero LPC violations in healthy runs.
-
--   **Spectral Mapping (Rydberg/QDT):**
-    -   **Test:** Collapse transition frequencies to find classical and revival times.
-    -   **Interpretation:** Short-loop holonomies map onto Quantum Defect Theory (QDT) defects `δ_l`.
-
-## 4. Repository Structure
-
--   **/configs**: YAML/JSON configuration files for simulation runs.
--   **/data**: Small reference datasets.
--   **/docs**: Whitepapers, design notes, and mathematical appendices.
--   **/notebooks**: Jupyter Notebooks for analysis and visualization.
--   **/results**: (Ignored by Git) Output directory for simulation artifacts.
--   **/scripts**: Utility scripts for common tasks.
--   **/src/doft**: Main Python source code for the simulator.
--   **/theory**: Axioms, derivations, and the falsification plan.
--   **/ci**: Static checks, unit tests, and audit scripts.
-
-## 5. Getting Started
-
-1.  **Clone the Repository:**
-    ```bash
-    git clone <REPO_URL>
-    cd <REPO_NAME>
-    ```
-
-2.  **Create and Activate Environment:** We recommend Conda for managing the environment.
-    ```bash
-    conda env create -f environment.yml
-    conda activate doft_v12
-    ```
-
-3.  **(Optional, for GPU) Install PyTorch Wheels:**
-    ```bash
-    pip install --no-deps --force-reinstall /path/to/torch.whl /path/to/torchvision.whl
-    ```
-
-4.  **Run a Quick Smoke Test:**
-    ```bash
-    # For CPU
-    USE_GPU=0 python -m src.run_sim --config configs/quick_test.yml --out results/smoke_test_cpu
-
-    # For GPU
-    USE_GPU=1 python -m src.run_sim --config configs/quick_test.yml --out results/smoke_test_gpu
-    ```
-
-## 6. Workflow & Governance
-
-This project follows a strict, multi-party workflow to ensure correctness and reproducibility.
-
--   **Evaluators (OpenAI/Google):** Propose experiments and acceptance criteria via Pull Requests to the `/configs/` directory.
--   **Developer (Google Track):** Implements features and solvers, including unit tests and performance notes.
--   **Code Auditor (OpenAI Track):** Reviews numerical stability, determinism, and metric integrity. Has the authority to block merges that fail audit.
--   **Runner:** Executes merged experiments and publishes signed artifacts to a results store.
