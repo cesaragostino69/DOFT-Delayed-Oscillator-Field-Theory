@@ -7,36 +7,28 @@ import json
 import os
 from itertools import product
 
-# Import the physical model, which will now be complete
 from doft.models.model import DOFTModel
 
 def main():
     """
     Main orchestrator for the DOFT Phase 1 counter-trial.
-    This script replaces the previous 'stub' and executes the experiments
-    required by the "Definitive Action Plan".
-    It saves the results of each complete sweep into a unique, timestamped directory.
+    This version corrects issues from Audit #0006.
     """
     parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
     args = parser.parse_args()
 
     # --- "Break the Constant" Sweep Configuration (Experiment A) ---
-    # C-1 CLARITY FIX: Define all 9 points explicitly as requested by the audit.
+    # AUDIT #0006 FIX: Execute the full 9-point list (with duplicates) to match the spec verbatim.
     group1 = [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)]
     group2 = [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)]
     group3 = [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)]
+    simulation_points = group1 + group2 + group3 # This list now has 9 elements.
 
-    # We create a dictionary to map each unique point to its group(s) for QA labeling.
-    # The set of unique points is used for efficient execution.
-    all_points_with_groups = {}
-    for pt in set(group1 + group2 + group3):
-        groups = []
-        if pt in group1: groups.append('g1')
-        if pt in group2: groups.append('g2')
-        if pt in group3: groups.append('g3')
-        all_points_with_groups[pt] = '+'.join(groups)
-    
-    unique_simulation_points = sorted(list(all_points_with_groups.keys()))
+    # We still create a map to label the groups correctly in the output CSV.
+    point_to_group = {}
+    for pt in group1: point_to_group[pt] = 'g1'
+    for pt in group2: point_to_group[pt] = 'g2'
+    for pt in group3: point_to_group[pt] = 'g3'
 
     seeds = [42, 123, 456, 789, 1011]
     gamma = 0.05
@@ -55,12 +47,12 @@ def main():
     all_runs_data = []
     all_blocks_data = []
     
-    print(f"🚀 Starting DOFT Phase-1 Simulation Sweep across {len(unique_simulation_points)} unique points (covering all 9 grid points)...")
+    print(f"🚀 Starting DOFT Phase-1 Simulation Sweep across {len(simulation_points)} points (full 3x3 grid)...")
     
     run_counter = 0
-    total_sims = len(unique_simulation_points) * len(seeds)
+    total_sims = len(simulation_points) * len(seeds)
 
-    for (a_mean, tau_mean) in unique_simulation_points:
+    for (a_mean, tau_mean) in simulation_points:
         for seed in seeds:
             run_counter += 1
             run_id = f"run_{int(time.time())}_{run_counter}"
@@ -77,7 +69,7 @@ def main():
             run_metrics['a_mean'] = a_mean
             run_metrics['tau_mean'] = tau_mean
             run_metrics['gamma'] = gamma
-            run_metrics['param_group'] = all_points_with_groups.get((a_mean, tau_mean), 'unknown')
+            run_metrics['param_group'] = point_to_group.get((a_mean, tau_mean), 'unknown')
             all_runs_data.append(run_metrics)
             
             if blocks_df is not None and not blocks_df.empty:
@@ -87,9 +79,6 @@ def main():
     print(f"\n✅ Simulation sweep finished. Consolidating and writing results to {output_dir}...")
 
     runs_df = pd.DataFrame(all_runs_data)
-    # Add the new required column if it's missing (for safety)
-    if 'var_c_over_c2' not in runs_df.columns:
-        runs_df['var_c_over_c2'] = np.nan
     runs_output_path = os.path.join(output_dir, 'runs.csv')
     runs_df.to_csv(runs_output_path, index=False)
     print(f"--> Wrote {len(runs_df)} rows to {runs_output_path}")
@@ -104,10 +93,10 @@ def main():
 
     meta_data = {
         'run_directory': f'phase1_run_{timestamp}', 'timestamp_utc': time.asctime(time.gmtime()),
-        'total_runs_in_sweep': run_counter, 'unique_points_executed': unique_simulation_points,
+        'total_runs_in_sweep': run_counter, 'simulation_points': simulation_points,
         'seeds_used': seeds, 'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
         'analysis_params': {
-            'lpc_window_size': 2048, 'lpc_overlap': 1024, 'detrending': 'mean',
+            'dt': 0.1, 'lpc_window_size': 2048, 'lpc_overlap': 1024,
             'pulse_num_angles': 16, 'pulse_hysteresis': (0.1, 0.07)
         }
     }
