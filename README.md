@@ -61,7 +61,7 @@ These are **claims under test**, not final truths.
 DOFT/
 ├── README.md                ← quick guide and project goals
 ├── LICENSE
-├── pyproject.toml / setup.cfg
+├── pyproject.toml
 ├── requirements.txt         ← Python dependencies
 ├── src/
 │   └── doft/                ← Python package with all source code

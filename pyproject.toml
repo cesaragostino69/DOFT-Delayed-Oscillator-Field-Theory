@@ -1,0 +1,10 @@
+[project]
+name = "doft"
+version = "0.1.0"
+authors = [
+    { name = "Cesar Agostino" }
+]
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
