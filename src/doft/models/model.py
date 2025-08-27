@@ -32,6 +32,8 @@ class DOFTModel:
         self.steps = int(cfg.get("steps", 50_000))
         self.dt = float(cfg.get("dt", 1e-3))
         self.K = float(cfg.get("K", 0.3))
+        self.gamma = float(cfg.get("gamma", 0.0))
+        self.omega = float(cfg.get("omega", 0.0))
         self.batch = int(cfg.get("batch_replicas", 64))
         self.log_interval = int(cfg.get("log_interval", 60))
 
@@ -74,7 +76,13 @@ class DOFTModel:
         # Broadcast the Prony memory terms across the spatial grid
         self.Y = self.Y + dt * (-self.Y / self.theta + self.w * self.Q[:, :, None])
         Mterm = np.sum(self.Y, axis=2)
-        self.P = self.P + dt * (-self.K * self.Q + Mterm + xi)
+        self.P = self.P + dt * (
+            -self.K * self.Q
+            + Mterm
+            + xi
+            - self.gamma * self.P
+            - self.omega**2 * self.Q
+        )
         self.Q = self.Q + dt * self.P
         j = self.bidx % self.win
         self.bufQ[:, :, j] = self.Q
@@ -84,7 +92,7 @@ class DOFTModel:
     def _to_numpy(self, T):
         return np.array(T, dtype=np.float64, copy=True)
 
-    def run(self, gamma: float, xi_amp: float, seed: int, out_dir: str) -> dict:
+    def run(self, xi_amp: float, seed: int, out_dir: str) -> dict:
         np.random.seed(int(seed))
 
         rl = RateLogger(self.log_interval)

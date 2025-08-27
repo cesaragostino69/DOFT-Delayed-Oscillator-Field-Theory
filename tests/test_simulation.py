@@ -12,7 +12,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from doft.models.model import DOFTModel
 
 
-def test_doft_model_run_returns_numeric_results(tmp_path):
+import pytest
+
+
+@pytest.mark.parametrize("gamma, omega", [(0.1, 0.5), (0.2, 1.0)])
+def test_doft_model_run_returns_numeric_results(tmp_path, gamma, omega):
     cfg = {
         "steps": 5,
         "dt": 0.01,
@@ -22,10 +26,12 @@ def test_doft_model_run_returns_numeric_results(tmp_path):
         "L": 4,
         "a": {"mean": 1.0, "sigma": 0.1},
         "tau0": {"mean": 1.0, "sigma": 0.1},
+        "gamma": gamma,
+        "omega": omega,
     }
 
     model = DOFTModel(cfg)
-    results, _ = model.run(gamma=0.1, xi_amp=0.01, seed=0, out_dir=str(tmp_path))
+    results, _ = model.run(xi_amp=0.01, seed=0, out_dir=str(tmp_path))
 
     assert isinstance(results, dict)
     assert "ceff_pulse" in results and "anisotropy_max_pct" in results
@@ -44,6 +50,8 @@ def test_run_returns_positive_ceff_when_threshold_crossed(tmp_path):
         "L": 16,
         "a": {"mean": 1.0, "sigma": 0.1},
         "tau0": {"mean": 1.0, "sigma": 0.1},
+        "gamma": 0.15,
+        "omega": 0.9,
     }
 
     model = DOFTModel(cfg)
@@ -53,6 +61,6 @@ def test_run_returns_positive_ceff_when_threshold_crossed(tmp_path):
             r = np.sqrt((i - center) ** 2 + (j - center) ** 2)
             model.Q[i, j] = max(0.0, 1.0 - 0.2 * r)
 
-    results, _ = model.run(gamma=0.1, xi_amp=0.05, seed=0, out_dir=str(tmp_path))
+    results, _ = model.run(xi_amp=0.05, seed=0, out_dir=str(tmp_path))
     ceff = results["ceff_pulse"]
     assert ceff > 0 and math.isfinite(ceff)
