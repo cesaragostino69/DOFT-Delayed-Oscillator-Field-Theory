@@ -9,10 +9,10 @@ PY="${CONDA_PREFIX:-}/bin/python"
 
 echo "# using python: $PY"
 echo "# using config: $CFG"
-echo "# backend: threading | tasks: 27"
+echo "# n_jobs: 1"
 
 "$PY" -m doft.simulation.run_sim \
   --config "$CFG" \
   --out "$OUT_DIR" \
-  --backend threading --n-jobs 1 --log-interval 60
+  --n-jobs 1
 
