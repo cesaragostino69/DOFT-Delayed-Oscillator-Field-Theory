@@ -104,7 +104,9 @@ Take time to see this document [docs/protocols/manifest1_p1_DOFT.md](docs/protoc
 ### Reproduce a short sweep
 
 ```bash
-python -m sim.core --config runs/sanity.yaml --out out/sanity
+bash scripts/run_phase1.sh
+# or
+python -m doft.simulation.run_sim --config configs/config_phase1.json --out results/demo
 ```
 
 - Produces `runs.csv`, `edges.parquet`, and basic plots.
@@ -112,7 +114,7 @@ python -m sim.core --config runs/sanity.yaml --out out/sanity
 ### Self-averaging report
 
 ```bash
-python -m reports.self_avg --in out/sanity --out out/sanity/report
+python -m reports.self_avg --in results/demo --out results/demo/report
 ```
 
 Emits summary CSV/PNG with estimated $\bar c$ and anisotropy $\Delta c / c$.
