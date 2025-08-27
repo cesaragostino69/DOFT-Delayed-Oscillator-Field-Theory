@@ -1,188 +1,127 @@
-#!/usr/bin/env python
-"""Run DOFT experiments described by a JSON configuration.
-
-This utility reads ``config_phase1.json``-style files, instantiates a
-``DOFTModel`` for every experiment/seed/gamma combination and records the
-summary of each run to ``summary.csv`` inside the output directory.
-
-The intent is not to be a high performance runner but to provide a simple
-reference implementation that our documentation and tests can execute. Basic
-parallel execution is available via the ``--n-jobs`` argument.
-"""
-
-from __future__ import annotations
-
+# src/doft/simulation/run_sim.py
 import argparse
-import csv
-import json
-import pathlib
-import multiprocessing as mp
-from typing import Any, Dict, Iterable, List, Tuple
-
+import pandas as pd
 import numpy as np
+import time
+import json
+import os
+from itertools import product
 
+# Import the physical model, which will now be complete
 from doft.models.model import DOFTModel
 
-
-def _ensure_list(x: Any) -> List[Any]:
-    """Return ``x`` if it is a list, otherwise wrap it in a list."""
-    if isinstance(x, list):
-        return x
-    return [x]
-
-
-def _norm_params(params: Any) -> Dict[str, float]:
-    """Normalise parameter dictionaries to ``{"mean": .., "sigma": ..}``.
-
-    The configuration files may specify the dispersion either as ``std`` or
-    ``sigma``. ``DOFTModel`` expects the latter.
+def main():
     """
-    if not isinstance(params, dict):
-        return {"mean": float(params), "sigma": 0.0}
-    if "sigma" in params:
-        return {"mean": float(params["mean"]), "sigma": float(params["sigma"])}
-    if "std" in params:
-        return {"mean": float(params["mean"]), "sigma": float(params["std"])}
-    return {"mean": float(params.get("mean", 0.0)), "sigma": 0.0}
-
-
-def _run_single(task: Tuple[str, Dict[str, Any], float, str]) -> Dict[str, float]:
-    """Execute a single simulation run.
-
-    Parameters
-    ----------
-    task:
-        Tuple containing the experiment name, configuration dictionary, noise
-        amplitude and output directory path.
-
-    Returns
-    -------
-    Dict[str, float]
-        Row ready to be written to ``summary.csv``.
+    Main orchestrator for the DOFT Phase 1 counter-trial.
+    This script replaces the previous 'stub' and executes the experiments
+    required by the "Definitive Action Plan".
+    It saves the results of each complete sweep into a unique, timestamped directory.
     """
-
-    name, cfg, xi_amp, out_dir = task
-    run_path = pathlib.Path(out_dir)
-    run_path.mkdir(parents=True, exist_ok=True)
-
-    model = DOFTModel(cfg)
-    results, _ = model.run(xi_amp=xi_amp, seed=int(cfg["seed"]), out_dir=str(run_path))
-
-    return {
-        "experiment": name,
-        "gamma": float(cfg["gamma"]),
-        "seed": int(cfg["seed"]),
-        "ceff_pulse": results.get("ceff_pulse", 0.0),
-        "ceff_x": results.get("ceff_x", 0.0),
-        "ceff_y": results.get("ceff_y", 0.0),
-        "anisotropy": results.get("anisotropy_max_pct", 0.0),
-        "hbar_eff": results.get("hbar_eff", 0.0),
-        "lpc_rate": results.get("lpc_rate", 0.0),
-    }
-
-
-def run_experiments(config: Dict[str, Any], out_dir: pathlib.Path, n_jobs: int = 1) -> None:
-    """Execute all experiments defined in ``config``.
-
-    A ``summary.csv`` file is produced with one row per executed run containing
-    the main metrics returned by :meth:`DOFTModel.run` along with an estimate of
-    ``hbar_eff`` computed from the final state.
-    """
-    base_cfg: Dict[str, Any] = {
-        k: v
-        for k, v in config.items()
-        if k not in {"experiments", "prony_memory", "xi_amp"}
-    }
-
-    prony = config.get("prony_memory", {})
-    base_cfg["prony_weights"] = prony.get("weights", [])
-    base_cfg["prony_thetas"] = prony.get("thetas", [])
-
-    xi_amp = float(config.get("xi_amp", 0.0))
-
-    summary_path = out_dir / "summary.csv"
-    fieldnames = [
-        "experiment",
-        "gamma",
-        "seed",
-        "ceff_pulse",
-        "ceff_x",
-        "ceff_y",
-        "anisotropy",
-        "hbar_eff",
-        "lpc_rate",
-    ]
-
-    tasks: List[Tuple[str, Dict[str, Any], float, str]] = []
-
-    for exp in config.get("experiments", []):
-        name = exp.get("name", "experiment")
-        seeds: Iterable[int] = _ensure_list(exp.get("seeds", [0]))
-        gammas: Iterable[float] = _ensure_list(exp.get("gamma", 0.0))
-
-        # Parameter lists for ``a`` and ``tau0``. If an experiment does not
-        # specify them we fall back to the defaults in ``base_cfg`` (if any)
-        # to keep the run configuration well defined.
-        default_a = _norm_params(base_cfg.get("a", {"mean": 1.0, "sigma": 0.0}))
-        default_tau = _norm_params(base_cfg.get("tau0", {"mean": 1.0, "sigma": 0.0}))
-
-        a_params_list = [
-            _norm_params(p) for p in _ensure_list(exp.get("a", [default_a]))
-        ]
-        tau_params_list = [
-            _norm_params(p) for p in _ensure_list(exp.get("tau0", [default_tau]))
-        ]
-
-        for gamma in gammas:
-            for idx, seed in enumerate(seeds):
-                a_params = a_params_list[idx % len(a_params_list)]
-                tau_params = tau_params_list[idx % len(tau_params_list)]
-
-                cfg = dict(base_cfg)
-                cfg.update(
-                    {
-                        "gamma": float(gamma),
-                        "seed": int(seed),
-                        "a": a_params,
-                        "tau0": tau_params,
-                    }
-                )
-
-                run_out = out_dir / name / f"g{gamma}_s{seed}"
-                tasks.append((name, cfg, xi_amp, str(run_out)))
-
-    with summary_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-
-        if n_jobs == 1:
-            for row in map(_run_single, tasks):
-                writer.writerow(row)
-        else:
-            with mp.Pool(processes=n_jobs) as pool:
-                for row in pool.imap_unordered(_run_single, tasks):
-                    writer.writerow(row)
-
-    print(f"Wrote summary results to {summary_path}")
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Run DOFT simulations")
-    parser.add_argument("--config", required=True, help="Path to experiment config JSON")
-    parser.add_argument("--out", required=True, help="Directory to write results")
-    parser.add_argument(
-        "--n-jobs", type=int, default=1, help="Number of parallel jobs"
-    )
+    parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
     args = parser.parse_args()
 
-    out_dir = pathlib.Path(args.out)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    # --- "Break the Constant" Sweep Configuration (Experiment A) ---
+    param_grid = {
+        'group1': [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)], # constant ratio
+        'group2': [(1.2, 1.0), (1.5, 1.0)],             # increase a
+        'group3': [(1.0, 0.8), (1.0, 0.67)]             # decrease tau
+    }
+    base_point = [(1.0, 1.0)]
+    simulation_points = base_point + param_grid['group1'][1:] + param_grid['group2'] + param_grid['group3']
+    
+    seeds = [42, 123, 456, 789, 1011] # ≥5 seeds per point, as required
+    
+    # Fixed parameters for Phase 1
+    gamma = 0.05  # Requirement: γ > 0 for a passive system
+    grid_size = 100 # Oscillator network size
+    
+    # --- Create Unique Output Directory ---
+    # Create the main 'runs' directory if it doesn't exist
+    base_run_dir = 'runs'
+    os.makedirs(base_run_dir, exist_ok=True)
+    
+    # Generate the unique, timestamped directory for this specific execution
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    output_dir = os.path.join(base_run_dir, f'phase1_run_{timestamp}')
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"📁 Saving results to: {output_dir}")
 
-    with open(args.config, "r", encoding="utf-8") as f:
-        config = json.load(f)
+    # --- Simulation Execution ---
+    all_runs_data = []
+    all_blocks_data = []
+    
+    print("🚀 Starting DOFT Phase-1 Simulation Sweep...")
+    
+    run_counter = 0
+    total_sims = len(simulation_points) * len(seeds)
 
-    run_experiments(config, out_dir, n_jobs=args.n_jobs)
+    for (a_mean, tau_mean) in simulation_points:
+        for seed in seeds:
+            run_counter += 1
+            # The run_id is internal to the CSV files
+            run_id = f"run_{int(time.time())}_{run_counter}"
+            print(f"[{run_counter}/{total_sims}] Running sim: a={a_mean}, τ={tau_mean}, seed={seed}")
+            
+            # 1. Instantiate the model with the parameters for this run
+            model = DOFTModel(
+                grid_size=grid_size,
+                a=a_mean,
+                tau=tau_mean,
+                gamma=gamma,
+                seed=seed
+            )
+            
+            # 2. Execute the simulation
+            run_metrics, blocks_df = model.run()
+            
+            # 3. Enrich the results with the input parameters
+            run_metrics['run_id'] = run_id
+            run_metrics['seed'] = seed
+            run_metrics['a_mean'] = a_mean
+            run_metrics['tau_mean'] = tau_mean
+            run_metrics['gamma'] = gamma
+            all_runs_data.append(run_metrics)
+            
+            if blocks_df is not None and not blocks_df.empty:
+                blocks_df['run_id'] = run_id
+                all_blocks_data.append(blocks_df)
 
+    # 4. Consolidate and save the results according to the data contract
+    print(f"\n✅ Simulation sweep finished. Consolidating and writing results to {output_dir}...")
+
+    # Save runs.csv
+    runs_df = pd.DataFrame(all_runs_data)
+    runs_output_path = os.path.join(output_dir, 'runs.csv')
+    runs_df.to_csv(runs_output_path, index=False)
+    print(f"--> Wrote {len(runs_df)} rows to {runs_output_path}")
+    
+    # Save blocks.csv
+    if all_blocks_data:
+        blocks_df_final = pd.concat(all_blocks_data, ignore_index=True)
+        blocks_output_path = os.path.join(output_dir, 'blocks.csv')
+        blocks_df_final.to_csv(blocks_output_path, index=False)
+        print(f"--> Wrote {len(blocks_df_final)} rows to {blocks_output_path}")
+    else:
+        print("--> No block data generated for blocks.csv.")
+
+    # Save metadata
+    meta_data = {
+        'run_directory': f'phase1_run_{timestamp}',
+        'timestamp_utc': time.asctime(time.gmtime()),
+        'total_runs_in_sweep': run_counter,
+        'seeds_used': seeds,
+        'simulation_points': simulation_points,
+        'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
+        'analysis_params': {
+            'lpc_window_size': 2048,
+            'lpc_overlap': 0.5,
+            'detrending': 'linear'
+        }
+    }
+    meta_output_path = os.path.join(output_dir, 'run_meta.json')
+    with open(meta_output_path, 'w') as f:
+        json.dump(meta_data, f, indent=4)
+    print(f"--> Wrote metadata to {meta_output_path}")
 
 if __name__ == "__main__":
     main()
