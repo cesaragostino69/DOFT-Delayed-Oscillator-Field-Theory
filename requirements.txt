@@ -1,0 +1,3 @@
+# Root dependencies for DOFT
+# This file references detailed requirements in scripts/requirements.txt
+-r scripts/requirements.txt

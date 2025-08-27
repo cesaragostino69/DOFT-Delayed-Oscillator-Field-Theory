@@ -59,23 +59,20 @@ These are **claims under test**, not final truths.
 
 ```
 DOFT/
-├── README.md                ← guía rápida y objetivos del proyecto
+├── README.md                ← quick guide and project goals
 ├── LICENSE
 ├── pyproject.toml / setup.cfg
-├── requirements/            ← dependencias separadas (base, dev, docs, etc.)
+├── requirements.txt         ← Python dependencies
 ├── src/
-│   └── doft/                ← paquete Python con todo el código fuente
+│   └── doft/                ← Python package with all source code
 │       ├── __init__.py
 │       ├── models/
 │       ├── simulation/
 │       ├── analysis/
 │       └── utils/
-├── scripts/                 ← scripts CLI o de mantenimiento
-├── configs/                 ← archivos JSON/YAML de configuración
-├── tests/                   ← pruebas unitarias e integración (pytest)
-├── docs/                    ← documentación extensa, guías, papers
-├── notebooks/               ← experimentos o tutoriales en Jupyter
-├── runs/                    ← resultados de corridas (git‑ignored)
+├── scripts/                 ← CLI or maintenance scripts
+├── configs/                 ← JSON/YAML configuration files
+├── docs/                    ← extensive documentation, guides, papers
 └── .gitignore
 
 ```
@@ -98,7 +95,7 @@ pip install -r requirements.txt
 
 ## Development Guidelines
 
-Take a time to see this document [docs/manifest1_p1_DOFT](docs/manifest1_p1_DOFT) for guilines to participate in this project.
+Take time to see this document [docs/protocols/manifest1_p1_DOFT.md](docs/protocols/manifest1_p1_DOFT.md) for guidelines to participate in this project.
 
 
 ### Reproduce a short sweep
