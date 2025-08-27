@@ -3,6 +3,8 @@ _A research program on emergent spacetime, gravity, and quantum signatures from 
 
 **Status:** Research Alpha | Open Methodology | Cross-Lab Collaboration
 
+> “Order is memory made visible. Chaos is the fuel that keeps memory from fading.” — DOFT Axiom A0 (Law of Chaos Preservation)
+
 ---
 
 ## 1. Overview
@@ -12,8 +14,6 @@ This repository hosts the reference implementation, experiments, and analysis pi
 The project's goals are:
 -   **Theory-to-data:** Derive falsifiable predictions (scalings, collapse laws, stability bounds) from DOFT’s axioms.
 -   **Data-to-theory:** Test those predictions with numerics and public datasets, and report success/failure with code-audited, reproducible runs.
-
-> “Order is memory made visible. Chaos is the fuel that keeps memory from fading.” — DOFT Axiom A0 (Law of Chaos Preservation)
 
 ---
 
