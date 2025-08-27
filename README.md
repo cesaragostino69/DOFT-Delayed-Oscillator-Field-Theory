@@ -112,7 +112,7 @@ pip install -r requirements.txt
 
 ## Development Guidelines
 
-Take time to see this document [docs/protocols/manifest1_p1_DOFT.md](docs/protocols/manifest1_p1_DOFT.md) for guidelines to participate in this project.
+Take time to see this document [docs/protocols/iteration1_phase1.md](docs/protocols/iteration1_phase1.md) for guidelines to participate in this project.
 
 
 ### Reproduce a short sweep

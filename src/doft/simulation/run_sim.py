@@ -21,26 +21,31 @@ def main():
     args = parser.parse_args()
 
     # --- "Break the Constant" Sweep Configuration (Experiment A) ---
-    param_grid = {
-        'group1': [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)], # constant ratio
-        'group2': [(1.2, 1.0), (1.5, 1.0)],             # increase a
-        'group3': [(1.0, 0.8), (1.0, 0.67)]             # decrease tau
-    }
-    base_point = [(1.0, 1.0)]
-    simulation_points = base_point + param_grid['group1'][1:] + param_grid['group2'] + param_grid['group3']
+    # C-1 CLARITY FIX: Define all 9 points explicitly as requested by the audit.
+    group1 = [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)]
+    group2 = [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)]
+    group3 = [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)]
+
+    # We create a dictionary to map each unique point to its group(s) for QA labeling.
+    # The set of unique points is used for efficient execution.
+    all_points_with_groups = {}
+    for pt in set(group1 + group2 + group3):
+        groups = []
+        if pt in group1: groups.append('g1')
+        if pt in group2: groups.append('g2')
+        if pt in group3: groups.append('g3')
+        all_points_with_groups[pt] = '+'.join(groups)
     
-    seeds = [42, 123, 456, 789, 1011] # ≥5 seeds per point, as required
-    
-    # Fixed parameters for Phase 1
-    gamma = 0.05  # Requirement: γ > 0 for a passive system
-    grid_size = 100 # Oscillator network size
+    unique_simulation_points = sorted(list(all_points_with_groups.keys()))
+
+    seeds = [42, 123, 456, 789, 1011]
+    gamma = 0.05
+    grid_size = 100
     
     # --- Create Unique Output Directory ---
-    # Create the main 'runs' directory if it doesn't exist
     base_run_dir = 'runs'
     os.makedirs(base_run_dir, exist_ok=True)
     
-    # Generate the unique, timestamped directory for this specific execution
     timestamp = time.strftime('%Y%m%d_%H%M%S')
     output_dir = os.path.join(base_run_dir, f'phase1_run_{timestamp}')
     os.makedirs(output_dir, exist_ok=True)
@@ -50,72 +55,60 @@ def main():
     all_runs_data = []
     all_blocks_data = []
     
-    print("🚀 Starting DOFT Phase-1 Simulation Sweep...")
+    print(f"🚀 Starting DOFT Phase-1 Simulation Sweep across {len(unique_simulation_points)} unique points (covering all 9 grid points)...")
     
     run_counter = 0
-    total_sims = len(simulation_points) * len(seeds)
+    total_sims = len(unique_simulation_points) * len(seeds)
 
-    for (a_mean, tau_mean) in simulation_points:
+    for (a_mean, tau_mean) in unique_simulation_points:
         for seed in seeds:
             run_counter += 1
-            # The run_id is internal to the CSV files
             run_id = f"run_{int(time.time())}_{run_counter}"
             print(f"[{run_counter}/{total_sims}] Running sim: a={a_mean}, τ={tau_mean}, seed={seed}")
             
-            # 1. Instantiate the model with the parameters for this run
             model = DOFTModel(
-                grid_size=grid_size,
-                a=a_mean,
-                tau=tau_mean,
-                gamma=gamma,
-                seed=seed
+                grid_size=grid_size, a=a_mean, tau=tau_mean, gamma=gamma, seed=seed
             )
             
-            # 2. Execute the simulation
             run_metrics, blocks_df = model.run()
             
-            # 3. Enrich the results with the input parameters
             run_metrics['run_id'] = run_id
             run_metrics['seed'] = seed
             run_metrics['a_mean'] = a_mean
             run_metrics['tau_mean'] = tau_mean
             run_metrics['gamma'] = gamma
+            run_metrics['param_group'] = all_points_with_groups.get((a_mean, tau_mean), 'unknown')
             all_runs_data.append(run_metrics)
             
             if blocks_df is not None and not blocks_df.empty:
                 blocks_df['run_id'] = run_id
                 all_blocks_data.append(blocks_df)
 
-    # 4. Consolidate and save the results according to the data contract
     print(f"\n✅ Simulation sweep finished. Consolidating and writing results to {output_dir}...")
 
-    # Save runs.csv
     runs_df = pd.DataFrame(all_runs_data)
+    # Add the new required column if it's missing (for safety)
+    if 'var_c_over_c2' not in runs_df.columns:
+        runs_df['var_c_over_c2'] = np.nan
     runs_output_path = os.path.join(output_dir, 'runs.csv')
     runs_df.to_csv(runs_output_path, index=False)
     print(f"--> Wrote {len(runs_df)} rows to {runs_output_path}")
     
-    # Save blocks.csv
     if all_blocks_data:
         blocks_df_final = pd.concat(all_blocks_data, ignore_index=True)
         blocks_output_path = os.path.join(output_dir, 'blocks.csv')
         blocks_df_final.to_csv(blocks_output_path, index=False)
         print(f"--> Wrote {len(blocks_df_final)} rows to {blocks_output_path}")
     else:
-        print("--> No block data generated for blocks.csv.")
+        print("--> No block data generated for blocks.csv (check LPC settings if this is unexpected).")
 
-    # Save metadata
     meta_data = {
-        'run_directory': f'phase1_run_{timestamp}',
-        'timestamp_utc': time.asctime(time.gmtime()),
-        'total_runs_in_sweep': run_counter,
-        'seeds_used': seeds,
-        'simulation_points': simulation_points,
-        'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
+        'run_directory': f'phase1_run_{timestamp}', 'timestamp_utc': time.asctime(time.gmtime()),
+        'total_runs_in_sweep': run_counter, 'unique_points_executed': unique_simulation_points,
+        'seeds_used': seeds, 'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
         'analysis_params': {
-            'lpc_window_size': 2048,
-            'lpc_overlap': 0.5,
-            'detrending': 'linear'
+            'lpc_window_size': 2048, 'lpc_overlap': 1024, 'detrending': 'mean',
+            'pulse_num_angles': 16, 'pulse_hysteresis': (0.1, 0.07)
         }
     }
     meta_output_path = os.path.join(output_dir, 'run_meta.json')
