@@ -11,18 +11,18 @@ def coerce_numeric(df, cols):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("inputs", nargs="+", help="directorios o patrones con shards (ej: runs/quick_shard*)")
-    ap.add_argument("--out", required=True, help="directorio de salida")
+    ap.add_argument("inputs", nargs="+", help="directories or shard patterns (e.g. runs/quick_shard*)")
+    ap.add_argument("--out", required=True, help="output directory")
     args = ap.parse_args()
 
-    # Localiza todos los table.csv bajo cada input
+    # Locate all table.csv under each input
     files = []
     for pat in args.inputs:
         for root in glob.glob(pat):
             files.extend(glob.glob(os.path.join(root, "**", "table.csv"), recursive=True))
     files = sorted(set(files))
     if not files:
-        raise SystemExit("No encontré table.csv en los inputs. ¿Terminó alguna corrida?")
+        raise SystemExit("No table.csv found in the inputs. Did any run finish?")
 
     dfs = []
     for f in files:
@@ -30,10 +30,10 @@ def main():
             df = pd.read_csv(f)
             dfs.append(df)
         except Exception as e:
-            print(f"[warn] no pude leer {f}: {e}")
+            print(f"[warn] could not read {f}: {e}")
 
     if not dfs:
-        raise SystemExit("No pude leer ningún CSV válido.")
+        raise SystemExit("Could not read any valid CSV.")
 
     big = pd.concat(dfs, ignore_index=True)
 
