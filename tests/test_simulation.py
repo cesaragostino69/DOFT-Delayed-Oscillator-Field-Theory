@@ -119,3 +119,28 @@ def test_anisotropy_max_pct_detects_map_diff(tmp_path):
     results, _ = model.run(xi_amp=0.05, seed=0, out_dir=str(tmp_path))
 
     assert results["anisotropy_max_pct"] > 0
+
+
+def test_seed_reproducibility(tmp_path):
+    cfg = {
+        "steps": 5,
+        "dt": 0.1,
+        "K": 0.3,
+        "seed": 0,
+        "batch_replicas": 1,
+        "L": 4,
+        "a": {"mean": 1.0, "sigma": 0.1},
+        "tau0": {"mean": 1.0, "sigma": 0.1},
+        "gamma": 0.1,
+        "omega": 0.5,
+    }
+
+    m1 = DOFTModel(cfg)
+    m2 = DOFTModel(cfg)
+    res1, _ = m1.run(xi_amp=0.01, seed=123, out_dir=str(tmp_path / "r1"))
+    res2, _ = m2.run(xi_amp=0.01, seed=123, out_dir=str(tmp_path / "r2"))
+    assert res1 == res2
+
+    m3 = DOFTModel(cfg)
+    res3, _ = m3.run(xi_amp=0.01, seed=321, out_dir=str(tmp_path / "r3"))
+    assert res1 != res3

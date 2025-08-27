@@ -85,7 +85,7 @@ class DOFTModel:
 
     def step_euler(self, xi_amp: float):
         dt = self.dt
-        xi = np.random.randn(*self.Q.shape).astype(np.float64) * float(xi_amp)
+        xi = self.rng.standard_normal(self.Q.shape).astype(np.float64) * float(xi_amp)
         # Broadcast the Prony memory terms across the spatial grid
         self.Y = self.Y + dt * (-self.Y / self.theta + self.w * self.Q[:, :, None])
         Mterm = np.sum(self.Y, axis=2)
@@ -130,7 +130,7 @@ class DOFTModel:
         return float(np.nanmean(entropies))
 
     def run(self, xi_amp: float, seed: int, out_dir: str) -> dict:
-        np.random.seed(int(seed))
+        self.rng = np.random.default_rng(int(seed))
 
         rl = RateLogger(self.log_interval)
         
