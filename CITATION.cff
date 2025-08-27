@@ -8,12 +8,12 @@ authors:
 repository-code: "https://github.com/cesaragostino/DOFT-Delayed-Oscillator-Field-Theory"
 version: "v0.1.0"
 date-released: 2025-08-26
-doi: waiting for DOI --- 10.5281/zenodo.XXXXXXX       
+doi: https://doi.org/10.5281/zenodo.16965708      
 identifiers:
   - type: doi
-    value: waiting for DOI --- 10.5281/zenodo.XXXXXXX  
+    value: 10.5281
   - type: doi
-    value: waiting for DOI --- 10.5281/zenodo.YYYYYYY  
+    value: zenodo.16965708
 preferred-citation:
   type: software
   title: "DOFT — Delayed Oscillator Field Theory"
@@ -21,5 +21,5 @@ preferred-citation:
     - family-names: Agostino
       given-names: Cesar
   year: 2025
-  doi: waiting for DOI --- //10.5281/zenodo.XXXXXXX
+  doi: https://doi.org/10.5281/zenodo.16965708
   url: "https://github.com/cesaragostino/DOFT-Delayed-Oscillator-Field-Theory"
