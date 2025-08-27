@@ -123,7 +123,7 @@ The dissipative term \(-\gamma P\) **must** affect dynamics. Minimal test: with 
 
 ---
 
-## Development Guidelines — manifest1_p1_DOFT
+## Development Guidelines — iteration1_phase1
 
 **Scope:** Basic rules for contributing to the DOFT project.
 
