@@ -2,6 +2,7 @@
   "L": 64,
   "steps": 120000,
   "dt": 0.001,
+  "dx": 1.0,
   "K": 0.3,
   "batch_replicas": 64,
   "window": 2048,

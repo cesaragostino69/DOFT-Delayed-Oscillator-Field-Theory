@@ -48,6 +48,7 @@ class DOFTModel:
         self.L = int(cfg.get("L", 64))
         rng = np.random.default_rng(int(cfg.get("seed", 0)))
         a_mean = float(cfg["a"]["mean"]); a_sigma = float(cfg["a"]["sigma"])
+        self.dx = float(cfg.get("dx", a_mean))
         tau_mean = float(cfg["tau0"]["mean"]); tau_sigma = float(cfg["tau0"]["sigma"])
         self.a_map = rng.normal(a_mean, a_sigma, size=(self.L, self.L)).astype(np.float64)
         self.tau_map = rng.normal(tau_mean, tau_sigma, size=(self.L, self.L)).astype(np.float64)
@@ -162,16 +163,16 @@ class DOFTModel:
 
                 mask_x = coords[:, 0] == center
                 if np.any(mask_x):
-                    dx = np.abs(coords[mask_x, 1] - center)
-                    for d_int in np.unique(dx.astype(int)):
+                    disp_x_idx = np.abs(coords[mask_x, 1] - center)
+                    for d_int in np.unique(disp_x_idx.astype(int)):
                         if d_int == 0 or d_int in cross_times_x[T]:
                             continue
                         cross_times_x[T][d_int] = t * self.dt
 
                 mask_y = coords[:, 1] == center
                 if np.any(mask_y):
-                    dy = np.abs(coords[mask_y, 0] - center)
-                    for d_int in np.unique(dy.astype(int)):
+                    disp_y_idx = np.abs(coords[mask_y, 0] - center)
+                    for d_int in np.unique(disp_y_idx.astype(int)):
                         if d_int == 0 or d_int in cross_times_y[T]:
                             continue
                         cross_times_y[T][d_int] = t * self.dt
@@ -182,13 +183,13 @@ class DOFTModel:
         all_fits = []
         all_fits_x = []
         all_fits_y = []
-        a_mean = self.cfg['a']['mean']
+        dx = float(self.cfg.get('dx', self.cfg['a']['mean']))
 
         for T in thresholds:
             points = sorted(cross_times[T].items())
             valid_points = [p for p in points if p[0] < self.L * 0.4]
             if len(valid_points) >= 5:
-                radii = np.array([p[0] for p in valid_points]) * a_mean
+                radii = np.array([p[0] for p in valid_points]) * dx
                 times = np.array([p[1] for p in valid_points])
                 if not (np.any(np.isnan(radii)) or np.any(np.isnan(times)) or times.size < 2 or radii.size < 2 or np.all(times == times[0])):
                     try:
@@ -203,7 +204,7 @@ class DOFTModel:
             points_x = sorted(cross_times_x[T].items())
             valid_x = [p for p in points_x if p[0] < self.L * 0.4]
             if len(valid_x) >= 2:
-                disp_x = np.array([p[0] for p in valid_x]) * a_mean
+                disp_x = np.array([p[0] for p in valid_x]) * dx
                 times_x = np.array([p[1] for p in valid_x])
                 try:
                     slope_x, _ = np.polyfit(times_x, disp_x, 1)
@@ -217,7 +218,7 @@ class DOFTModel:
             points_y = sorted(cross_times_y[T].items())
             valid_y = [p for p in points_y if p[0] < self.L * 0.4]
             if len(valid_y) >= 2:
-                disp_y = np.array([p[0] for p in valid_y]) * a_mean
+                disp_y = np.array([p[0] for p in valid_y]) * dx
                 times_y = np.array([p[1] for p in valid_y])
                 try:
                     slope_y, _ = np.polyfit(times_y, disp_y, 1)

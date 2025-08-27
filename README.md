@@ -239,6 +239,14 @@ $$
 
 Intuition: faster growth $\Rightarrow$ more congestion $\Rightarrow$ stronger brake.
 
+### Grid spacing and velocity units
+
+The lattice spacing `dx` sets the physical distance represented by a single grid cell.
+When `run()` converts radial indices to physical lengths it multiplies by `dx`, so the
+effective speeds (`ceff_pulse`, `ceff_x`, `ceff_y`) are reported in units of `dx` per
+unit time. Adjusting `dx` rescales the physical units of the simulation without
+altering its dimensionless dynamics.
+
 ### Emergent $c$ (self-averaging)
 
 Define blockwise estimator $\hat c(d)$ from propagation front statistics.  
