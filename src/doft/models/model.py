@@ -38,17 +38,18 @@ class DOFTModel:
         self.batch = int(cfg.get("batch_replicas", 64))
         self.log_interval = int(cfg.get("log_interval", 60))
 
-        L = int(cfg.get("L", 64))
+        self.L = int(cfg.get("L", 64))
         rng = np.random.default_rng(int(cfg.get("seed", 0)))
         a_mean = float(cfg["a"]["mean"]); a_sigma = float(cfg["a"]["sigma"])
         tau_mean = float(cfg["tau0"]["mean"]); tau_sigma = float(cfg["tau0"]["sigma"])
-        self.a_map = rng.normal(a_mean, a_sigma, size=(L, L)).astype(np.float64)
-        self.tau_map = rng.normal(tau_mean, tau_sigma, size=(L, L)).astype(np.float64)
+        self.a_map = rng.normal(a_mean, a_sigma, size=(self.L, self.L)).astype(np.float64)
+        self.tau_map = rng.normal(tau_mean, tau_sigma, size=(self.L, self.L)).astype(np.float64)
         self.ceff_map = np.divide(self.a_map, self.tau_map + 1e-12)
         self.ceff_bar = float(np.mean(self.ceff_map))
         self.aniso_rel = anisotropy_from_ceff_map(self.ceff_map)
 
         self.device = "cpu"
+        self.engine = "numpy"
 
         self.Q = np.zeros(self.batch, dtype=np.float64)
         self.P = np.zeros(self.batch, dtype=np.float64)
@@ -84,12 +85,12 @@ class DOFTModel:
         noise_floor = xi_amp if xi_amp > 0 else 1e-5
         thresholds = [3 * noise_floor, 5 * noise_floor]
         cross_times = {T: {} for T in thresholds}
+        center = self.L // 2
 
         for t in range(self.steps):
-            self._step_euler(xi_amp)
-            
-            q_np = self.Q.cpu().numpy() if self.engine == "torch" else self.Q
-            q_abs = np.abs(q_np[0])
+            self.step_euler(xi_amp)
+
+            q_abs = np.abs(self.Q[0])
             
             for T in thresholds:
                 coords = np.argwhere(q_abs > T)
@@ -112,7 +113,7 @@ class DOFTModel:
         
         for T in thresholds:
             points = sorted(cross_times[T].items())
-            valid_points = [p for p in points if p[0] < L * 0.4]
+            valid_points = [p for p in points if p[0] < self.L * 0.4]
             if len(valid_points) < 5: continue
 
             radii = np.array([p[0] for p in valid_points]) * a_mean
@@ -144,3 +145,14 @@ class DOFTModel:
             ceff_pulse = np.mean(all_fits)
         
         return {"ceff_pulse": ceff_pulse, "anisotropy_max_pct": 0.0}, []
+
+    def _log_nan_event(self, out_dir, msg, data):
+        os.makedirs(out_dir, exist_ok=True)
+        log_path = os.path.join(out_dir, "nan_events.jsonl")
+        event = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "message": msg,
+            "data": data,
+        }
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(event) + "\n")
