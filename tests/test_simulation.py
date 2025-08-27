@@ -35,7 +35,8 @@ def test_doft_model_run_returns_numeric_results(tmp_path, gamma, omega):
 
     assert isinstance(results, dict)
     assert "ceff_pulse" in results and "anisotropy_max_pct" in results
-    for key in ("ceff_pulse", "anisotropy_max_pct"):
+    assert "hbar_eff" in results and "lpc_rate" in results
+    for key in ("ceff_pulse", "anisotropy_max_pct", "hbar_eff", "lpc_rate"):
         val = results[key]
         assert not (isinstance(val, float) and math.isnan(val))
 
@@ -64,6 +65,31 @@ def test_run_returns_positive_ceff_when_threshold_crossed(tmp_path):
     results, _ = model.run(xi_amp=0.05, seed=0, out_dir=str(tmp_path))
     ceff = results["ceff_pulse"]
     assert ceff > 0 and math.isfinite(ceff)
+
+
+def test_hbar_eff_and_lpc_rate_sensitive_to_gamma(tmp_path):
+    base = {
+        "steps": 10,
+        "dt": 0.1,
+        "K": 0.3,
+        "seed": 0,
+        "batch_replicas": 1,
+        "L": 4,
+        "a": {"mean": 1.0, "sigma": 0.1},
+        "tau0": {"mean": 1.0, "sigma": 0.1},
+        "omega": 0.9,
+    }
+
+    cfg1 = dict(base); cfg1["gamma"] = 0.05
+    cfg2 = dict(base); cfg2["gamma"] = 0.25
+
+    model1 = DOFTModel(cfg1)
+    res1, _ = model1.run(xi_amp=0.01, seed=0, out_dir=str(tmp_path / "r1"))
+    model2 = DOFTModel(cfg2)
+    res2, _ = model2.run(xi_amp=0.01, seed=0, out_dir=str(tmp_path / "r2"))
+
+    assert res1["hbar_eff"] != res2["hbar_eff"]
+    assert res1["lpc_rate"] != res2["lpc_rate"]
 
 
 def test_anisotropy_max_pct_detects_map_diff(tmp_path):

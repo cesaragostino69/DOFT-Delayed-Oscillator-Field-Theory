@@ -73,6 +73,7 @@ def run_experiments(config: Dict[str, Any], out_dir: pathlib.Path) -> None:
         "ceff_y",
         "anisotropy",
         "hbar_eff",
+        "lpc_rate",
     ]
 
     with summary_path.open("w", newline="", encoding="utf-8") as f:
@@ -123,8 +124,6 @@ def run_experiments(config: Dict[str, Any], out_dir: pathlib.Path) -> None:
                         xi_amp=xi_amp, seed=int(seed), out_dir=str(run_out)
                     )
 
-                    hbar_eff = float(np.std(model.Q) * np.std(model.P))
-
                     writer.writerow(
                         {
                             "experiment": name,
@@ -134,7 +133,8 @@ def run_experiments(config: Dict[str, Any], out_dir: pathlib.Path) -> None:
                             "ceff_x": results.get("ceff_x", 0.0),
                             "ceff_y": results.get("ceff_y", 0.0),
                             "anisotropy": results.get("anisotropy_max_pct", 0.0),
-                            "hbar_eff": hbar_eff,
+                            "hbar_eff": results.get("hbar_eff", 0.0),
+                            "lpc_rate": results.get("lpc_rate", 0.0),
                         }
                     )
 

@@ -112,12 +112,29 @@ class DOFTModel:
     def _to_numpy(self, T):
         return np.array(T, dtype=np.float64, copy=True)
 
+    def _estimate_hbar_eff(self) -> float:
+        """Estimate an effective Planck constant via spectral entropy.
+
+        The circular buffer ``bufQ`` stores the recent history of the field for
+        every lattice site.  We treat the temporal trace at each site as an
+        independent one-dimensional signal and compute its spectral entropy.
+        ``hbar_eff`` is defined as the mean spectral entropy over all sites.
+        """
+
+        buf = self.bufQ.reshape(-1, self.win)
+        # ``spectral_entropy`` expects a 1D array; we map it over each site.
+        entropies = [spectral_entropy(tr) for tr in buf]
+        if len(entropies) == 0:
+            return float("nan")
+        return float(np.nanmean(entropies))
+
     def run(self, xi_amp: float, seed: int, out_dir: str) -> dict:
         np.random.seed(int(seed))
 
         rl = RateLogger(self.log_interval)
         
         noise_floor = xi_amp if xi_amp > 0 else 1e-5
+        hbar_start = self._estimate_hbar_eff()
         thresholds = [3 * noise_floor, 5 * noise_floor]
         cross_times = {T: {} for T in thresholds}
         cross_times_x = {T: {} for T in thresholds}
@@ -231,15 +248,37 @@ class DOFTModel:
         if cbar > 0:
             anisotropy = abs(ceff_x - ceff_y) / cbar
 
-        return {"ceff_pulse": ceff_pulse, "ceff_x": ceff_x, "ceff_y": ceff_y, "anisotropy_max_pct": float(anisotropy)}, []
+        hbar_end = self._estimate_hbar_eff()
+        total_time = self.steps * self.dt
+        lpc_rate = 0.0
+        if total_time > 0:
+            lpc_rate = (hbar_end - hbar_start) / total_time
+
+        return {
+            "ceff_pulse": ceff_pulse,
+            "ceff_x": ceff_x,
+            "ceff_y": ceff_y,
+            "anisotropy_max_pct": float(anisotropy),
+            "hbar_eff": hbar_end,
+            "lpc_rate": lpc_rate,
+        }, []
 
     def _log_nan_event(self, out_dir, msg, data):
         os.makedirs(out_dir, exist_ok=True)
         log_path = os.path.join(out_dir, "nan_events.jsonl")
+        def _serialise(obj):
+            if isinstance(obj, dict):
+                return {str(k): _serialise(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [_serialise(v) for v in obj]
+            if isinstance(obj, np.generic):
+                return obj.item()
+            return obj
+
         event = {
             "timestamp": datetime.datetime.now().isoformat(),
             "message": msg,
-            "data": data,
+            "data": _serialise(data),
         }
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(event) + "\n")
