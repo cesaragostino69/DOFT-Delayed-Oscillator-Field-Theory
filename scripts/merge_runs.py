@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import argparse, glob, os
-import pandas as pd
 import numpy as np
+
+try:
+    import pandas as pd
+except ImportError as e:
+    raise SystemExit("pandas is required to merge runs. Please install pandas and try again.") from e
 
 def coerce_numeric(df, cols):
     for c in cols:

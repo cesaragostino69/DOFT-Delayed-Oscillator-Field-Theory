@@ -1,8 +1,16 @@
 
-import os, pandas as pd, matplotlib.pyplot as plt
+import os
 
 def main():
     import argparse
+    try:
+        import pandas as pd
+    except ImportError as e:
+        raise SystemExit("pandas is required to analyze results. Please install pandas and try again.") from e
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError as e:
+        raise SystemExit("matplotlib is required to analyze results. Please install matplotlib and try again.") from e
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="indir", required=True)
     ap.add_argument("--out", dest="outdir", required=True)
