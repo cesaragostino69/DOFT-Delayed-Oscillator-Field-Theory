@@ -1,0 +1,23 @@
+# environment.yml para el simulador DOFT
+name: doft_v12
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pip
+  - pandas
+  - numpy<2.0
+  - matplotlib
+  - joblib
+  - tqdm
+  - filelock
+  - jinja2
+  - fsspec
+  - networkx
+  - sympy
+  - pip:
+    - typing-extensions>=4.8
+    
