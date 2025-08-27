@@ -118,9 +118,10 @@ Take time to see this document [docs/protocols/manifest1_p1_DOFT.md](docs/protoc
 ### Reproduce a short sweep
 
 ```bash
-python -m doft.simulation.run_sim --config configs/config_phase1.json --out results/demo_run
+python -m doft.simulation.run_sim --config configs/config_phase1.json --out results/demo_run --n-jobs 4
 ```
 
+- `--n-jobs` controls parallel workers (set to `1` for serial execution).
 - Generates a `summary.csv` with one row per experiment/seed and the main
   metrics such as `ceff_pulse`, anisotropy and `hbar_eff`.
 
