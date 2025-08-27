@@ -85,7 +85,7 @@ DOFT/
 
 ### Environment
 
-- Python >= 3.10
+- Python 3.11 or 3.12
 - NumPy, SciPy, pandas, pyyaml, matplotlib
 - No GPU code; **CPU-only** by design
 - Install dependencies from the root `requirements.txt`
