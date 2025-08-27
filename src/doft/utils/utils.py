@@ -75,6 +75,3 @@ def ensure_numpy(x):
         import numpy as _np
         return _np.asarray(x)
 
-def _to_numpy(x):
-    return ensure_numpy(x)
-
