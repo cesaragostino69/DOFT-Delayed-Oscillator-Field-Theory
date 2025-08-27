@@ -86,6 +86,7 @@ DOFT/
 - Python >= 3.10
 - NumPy, SciPy, pandas, pyyaml, matplotlib
 - No GPU code; **CPU-only** by design
+- Install dependencies from the root `requirements.txt`
 
 ```bash
 python -m venv .venv
