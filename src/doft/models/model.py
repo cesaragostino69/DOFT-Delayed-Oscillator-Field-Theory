@@ -119,12 +119,12 @@ class DOFTModel:
             times = np.array([p[1] for p in valid_points])
             
             if np.any(np.isnan(radii)) or np.any(np.isnan(times)):
-                self._log_nan_event(out_dir, "Datos de frente de onda contienen NaN.", {"times": times.tolist(), "radii": radii.tolist()})
+                self._log_nan_event(out_dir, "Wavefront data contains NaN values.", {"times": times.tolist(), "radii": radii.tolist()})
                 continue
             if times.size < 2 or radii.size < 2:
                 continue
             if np.all(times == times[0]):
-                self._log_nan_event(out_dir, "Todos los tiempos de cruce son idénticos.", {"times": times.tolist(), "radii": radii.tolist()})
+                self._log_nan_event(out_dir, "All crossing times are identical.", {"times": times.tolist(), "radii": radii.tolist()})
                 continue
 
             try:
@@ -132,13 +132,13 @@ class DOFTModel:
                 if slope > 0 and np.isfinite(slope):
                     all_fits.append(slope)
                 else:
-                    self._log_nan_event(out_dir, f"El ajuste de pendiente resultó en un valor no físico (slope={slope}).", {"times": times.tolist(), "radii": radii.tolist()})
+                    self._log_nan_event(out_dir, f"The slope fit yielded a non-physical value (slope={slope}).", {"times": times.tolist(), "radii": radii.tolist()})
             except (np.linalg.LinAlgError, ValueError) as e:
-                self._log_nan_event(out_dir, f"np.polyfit falló con el error '{e}'.", {"times": times.tolist(), "radii": radii.tolist()})
+                self._log_nan_event(out_dir, f"np.polyfit failed with error '{e}'.", {"times": times.tolist(), "radii": radii.tolist()})
                 continue
 
         if not all_fits:
-            self._log_nan_event(out_dir, "No se pudieron obtener ajustes de velocidad válidos de ningún umbral.", {"cross_times": cross_times})
+            self._log_nan_event(out_dir, "No valid velocity fits were obtained for any threshold.", {"cross_times": cross_times})
             ceff_pulse = np.nan
         else:
             ceff_pulse = np.mean(all_fits)

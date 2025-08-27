@@ -24,7 +24,7 @@ def main():
     plt.savefig(os.path.join(args.outdir, "lpc_rate_vs_gamma.png"), dpi=140); plt.close()
 
     plt.figure(); plt.bar(df["gamma"].astype(str), df["anisotropy_rel"])
-    plt.xlabel("gamma"); plt.ylabel("Δc/c"); plt.title("Anisotropía promedio"); plt.grid(True, axis="y", alpha=0.3)
+    plt.xlabel("gamma"); plt.ylabel("Δc/c"); plt.title("Average anisotropy"); plt.grid(True, axis="y", alpha=0.3)
     plt.savefig(os.path.join(args.outdir, "anisotropy_vs_gamma.png"), dpi=140); plt.close()
 
 if __name__ == "__main__":
