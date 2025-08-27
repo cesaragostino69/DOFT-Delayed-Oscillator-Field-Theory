@@ -15,7 +15,7 @@ The project's goals are:
 -   **Theory-to-data:** Derive falsifiable predictions (scalings, collapse laws, stability bounds) from DOFT’s axioms.
 -   **Data-to-theory:** Test those predictions with numerics and public datasets, and report success/failure with code-audited, reproducible runs.
 
-[This is the Manifesto](./MANIFESTO.md)
+[This is the DORF Manifesto](./MANIFESTO.md)
 
 ---
 
