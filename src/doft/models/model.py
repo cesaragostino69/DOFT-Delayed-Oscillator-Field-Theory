@@ -9,21 +9,18 @@ Core implementation of the DOFT model, refactored for Phase 1 QA issues.
 
 import os
 import math
-import numpy as np
 import json
 import datetime
-from ..utils.utils import RateLogger, spectral_entropy
+
+import numpy as np
+
+from ..utils.utils import RateLogger, spectral_entropy, anisotropy_from_ceff_map
 
 DEFAULT_DTYPE = "float64"
 def _as_dtype(name):
     if name in ("float64","double","np.float64"): return "float64"
     if name in ("float32","single","np.float32"): return "float32"
     return DEFAULT_DTYPE
-
-
-import numpy as np
-
-from ..utils.utils import RateLogger, spectral_entropy, anisotropy_from_ceff_map
 
 
 class DOFTModel:
