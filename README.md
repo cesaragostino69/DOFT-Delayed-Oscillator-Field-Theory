@@ -37,6 +37,8 @@ This repo contains:
 - A **validation harness** focused on **falsification-first** checks (self-averaging of $c$, LPC in closed systems, etc.).
 - A **reporting pipeline** that emits CSV/Parquet plus plots for independent auditing.
 
+All historic patch bundles and hotfixes have been **consolidated** into this repository. The current code represents the latest state; no external patch application is required.
+
 The goal is not to “prove” DOFT, but to **break it quickly** under clean tests. What survives earns attention.
 
 ---
