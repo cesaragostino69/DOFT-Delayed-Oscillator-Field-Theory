@@ -48,27 +48,37 @@ class DOFTModel:
         self.device = "cpu"
         self.engine = "numpy"
 
-        self.Q = np.zeros(self.batch, dtype=np.float64)
-        self.P = np.zeros(self.batch, dtype=np.float64)
-        self.theta = np.array(cfg.get("prony_thetas", [1e-3, 1e-2, 1e-1]), dtype=np.float64).reshape(1, 3)
-        self.w = np.array(cfg.get("prony_weights", [0.6, 0.3, 0.1]), dtype=np.float64).reshape(1, 3)
-        self.Y = np.zeros((self.batch, 3), dtype=np.float64)
+        # State variables defined on the LxL spatial grid
+        self.Q = np.zeros((self.L, self.L), dtype=np.float64)
+        self.P = np.zeros((self.L, self.L), dtype=np.float64)
+
+        # Prony memory parameters broadcast across spatial dimensions
+        self.theta = np.array(
+            cfg.get("prony_thetas", [1e-3, 1e-2, 1e-1]),
+            dtype=np.float64,
+        ).reshape(1, 1, 3)
+        self.w = np.array(
+            cfg.get("prony_weights", [0.6, 0.3, 0.1]),
+            dtype=np.float64,
+        ).reshape(1, 1, 3)
+        self.Y = np.zeros((self.L, self.L, 3), dtype=np.float64)
 
         self.win = int(cfg.get("window", 2048))
-        self.bufQ = np.zeros((self.batch, self.win), dtype=np.float64)
-        self.bufP = np.zeros((self.batch, self.win), dtype=np.float64)
+        self.bufQ = np.zeros((self.L, self.L, self.win), dtype=np.float64)
+        self.bufP = np.zeros((self.L, self.L, self.win), dtype=np.float64)
         self.bidx = 0
 
     def step_euler(self, xi_amp: float):
         dt = self.dt
         xi = np.random.randn(*self.Q.shape).astype(np.float64) * float(xi_amp)
-        self.Y = self.Y + dt * ( - self.Y / self.theta + self.w * self.Q.reshape(-1,1) )
-        Mterm = np.sum(self.Y, axis=1)
+        # Broadcast the Prony memory terms across the spatial grid
+        self.Y = self.Y + dt * (-self.Y / self.theta + self.w * self.Q[:, :, None])
+        Mterm = np.sum(self.Y, axis=2)
         self.P = self.P + dt * (-self.K * self.Q + Mterm + xi)
         self.Q = self.Q + dt * self.P
         j = self.bidx % self.win
-        self.bufQ[:, j] = self.Q
-        self.bufP[:, j] = self.P
+        self.bufQ[:, :, j] = self.Q
+        self.bufP[:, :, j] = self.P
         self.bidx += 1
 
     def _to_numpy(self, T):
@@ -87,7 +97,7 @@ class DOFTModel:
         for t in range(self.steps):
             self.step_euler(xi_amp)
 
-            q_abs = np.abs(self.Q[0])
+            q_abs = np.abs(self.Q)
             
             for T in thresholds:
                 coords = np.argwhere(q_abs > T)
