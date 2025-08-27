@@ -120,6 +120,8 @@ class DOFTModel:
         noise_floor = xi_amp if xi_amp > 0 else 1e-5
         thresholds = [3 * noise_floor, 5 * noise_floor]
         cross_times = {T: {} for T in thresholds}
+        cross_times_x = {T: {} for T in thresholds}
+        cross_times_y = {T: {} for T in thresholds}
         center = self.L // 2
 
         for t in range(self.steps):
@@ -129,10 +131,11 @@ class DOFTModel:
             
             for T in thresholds:
                 coords = np.argwhere(q_abs > T)
-                if coords.size == 0: continue
-                
-                radii = np.sqrt((coords[:,0] - center)**2 + (coords[:,1] - center)**2)
-                
+                if coords.size == 0:
+                    continue
+
+                radii = np.sqrt((coords[:, 0] - center) ** 2 + (coords[:, 1] - center) ** 2)
+
                 for r_int in np.unique(radii.astype(int)):
                     if r_int not in cross_times[T]:
                         last_time = max(cross_times[T].values()) if cross_times[T] else 0
@@ -140,38 +143,73 @@ class DOFTModel:
                         if current_time >= last_time:
                             cross_times[T][r_int] = current_time
 
+                mask_x = coords[:, 0] == center
+                if np.any(mask_x):
+                    dx = np.abs(coords[mask_x, 1] - center)
+                    for d_int in np.unique(dx.astype(int)):
+                        if d_int == 0 or d_int in cross_times_x[T]:
+                            continue
+                        cross_times_x[T][d_int] = t * self.dt
+
+                mask_y = coords[:, 1] == center
+                if np.any(mask_y):
+                    dy = np.abs(coords[mask_y, 0] - center)
+                    for d_int in np.unique(dy.astype(int)):
+                        if d_int == 0 or d_int in cross_times_y[T]:
+                            continue
+                        cross_times_y[T][d_int] = t * self.dt
+
             max_q = q_abs.max()
             rl.tick(t + 1, max_q=f"{max_q:.3f}")
 
         all_fits = []
+        all_fits_x = []
+        all_fits_y = []
         a_mean = self.cfg['a']['mean']
-        
+
         for T in thresholds:
             points = sorted(cross_times[T].items())
             valid_points = [p for p in points if p[0] < self.L * 0.4]
-            if len(valid_points) < 5: continue
+            if len(valid_points) >= 5:
+                radii = np.array([p[0] for p in valid_points]) * a_mean
+                times = np.array([p[1] for p in valid_points])
+                if not (np.any(np.isnan(radii)) or np.any(np.isnan(times)) or times.size < 2 or radii.size < 2 or np.all(times == times[0])):
+                    try:
+                        slope, _ = np.polyfit(times, radii, 1)
+                        if slope > 0 and np.isfinite(slope):
+                            all_fits.append(slope)
+                        else:
+                            self._log_nan_event(out_dir, f"The slope fit yielded a non-physical value (slope={slope}).", {"times": times.tolist(), "radii": radii.tolist()})
+                    except (np.linalg.LinAlgError, ValueError) as e:
+                        self._log_nan_event(out_dir, f"np.polyfit failed with error '{e}'.", {"times": times.tolist(), "radii": radii.tolist()})
 
-            radii = np.array([p[0] for p in valid_points]) * a_mean
-            times = np.array([p[1] for p in valid_points])
-            
-            if np.any(np.isnan(radii)) or np.any(np.isnan(times)):
-                self._log_nan_event(out_dir, "Wavefront data contains NaN values.", {"times": times.tolist(), "radii": radii.tolist()})
-                continue
-            if times.size < 2 or radii.size < 2:
-                continue
-            if np.all(times == times[0]):
-                self._log_nan_event(out_dir, "All crossing times are identical.", {"times": times.tolist(), "radii": radii.tolist()})
-                continue
+            points_x = sorted(cross_times_x[T].items())
+            valid_x = [p for p in points_x if p[0] < self.L * 0.4]
+            if len(valid_x) >= 2:
+                disp_x = np.array([p[0] for p in valid_x]) * a_mean
+                times_x = np.array([p[1] for p in valid_x])
+                try:
+                    slope_x, _ = np.polyfit(times_x, disp_x, 1)
+                    if slope_x > 0 and np.isfinite(slope_x):
+                        all_fits_x.append(slope_x)
+                    else:
+                        self._log_nan_event(out_dir, f"Non-physical x-slope (slope={slope_x}).", {"times": times_x.tolist(), "disp": disp_x.tolist()})
+                except (np.linalg.LinAlgError, ValueError) as e:
+                    self._log_nan_event(out_dir, f"np.polyfit x failed with error '{e}'.", {"times": times_x.tolist(), "disp": disp_x.tolist()})
 
-            try:
-                slope, _ = np.polyfit(times, radii, 1)
-                if slope > 0 and np.isfinite(slope):
-                    all_fits.append(slope)
-                else:
-                    self._log_nan_event(out_dir, f"The slope fit yielded a non-physical value (slope={slope}).", {"times": times.tolist(), "radii": radii.tolist()})
-            except (np.linalg.LinAlgError, ValueError) as e:
-                self._log_nan_event(out_dir, f"np.polyfit failed with error '{e}'.", {"times": times.tolist(), "radii": radii.tolist()})
-                continue
+            points_y = sorted(cross_times_y[T].items())
+            valid_y = [p for p in points_y if p[0] < self.L * 0.4]
+            if len(valid_y) >= 2:
+                disp_y = np.array([p[0] for p in valid_y]) * a_mean
+                times_y = np.array([p[1] for p in valid_y])
+                try:
+                    slope_y, _ = np.polyfit(times_y, disp_y, 1)
+                    if slope_y > 0 and np.isfinite(slope_y):
+                        all_fits_y.append(slope_y)
+                    else:
+                        self._log_nan_event(out_dir, f"Non-physical y-slope (slope={slope_y}).", {"times": times_y.tolist(), "disp": disp_y.tolist()})
+                except (np.linalg.LinAlgError, ValueError) as e:
+                    self._log_nan_event(out_dir, f"np.polyfit y failed with error '{e}'.", {"times": times_y.tolist(), "disp": disp_y.tolist()})
 
         if not all_fits:
             # Rather than propagating NaN values through the pipeline, default to
@@ -185,8 +223,15 @@ class DOFTModel:
             ceff_pulse = 0.0
         else:
             ceff_pulse = float(np.mean(all_fits))
-        
-        return {"ceff_pulse": ceff_pulse, "anisotropy_max_pct": 0.0}, []
+
+        ceff_x = float(np.mean(all_fits_x)) if all_fits_x else 0.0
+        ceff_y = float(np.mean(all_fits_y)) if all_fits_y else 0.0
+        anisotropy = 0.0
+        cbar = 0.5 * (ceff_x + ceff_y)
+        if cbar > 0:
+            anisotropy = abs(ceff_x - ceff_y) / cbar
+
+        return {"ceff_pulse": ceff_pulse, "ceff_x": ceff_x, "ceff_y": ceff_y, "anisotropy_max_pct": float(anisotropy)}, []
 
     def _log_nan_event(self, out_dir, msg, data):
         os.makedirs(out_dir, exist_ok=True)

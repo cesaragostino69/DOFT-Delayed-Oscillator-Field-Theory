@@ -64,3 +64,32 @@ def test_run_returns_positive_ceff_when_threshold_crossed(tmp_path):
     results, _ = model.run(xi_amp=0.05, seed=0, out_dir=str(tmp_path))
     ceff = results["ceff_pulse"]
     assert ceff > 0 and math.isfinite(ceff)
+
+
+def test_anisotropy_max_pct_detects_map_diff(tmp_path):
+    cfg = {
+        "steps": 60,
+        "dt": 0.1,
+        "K": 0.3,
+        "seed": 0,
+        "batch_replicas": 1,
+        "L": 16,
+        "a": {"mean": 1.0, "sigma": 0.1},
+        "tau0": {"mean": 1.0, "sigma": 0.1},
+        "gamma": 0.15,
+        "omega": 0.9,
+    }
+
+    model = DOFTModel(cfg)
+    center = model.L // 2
+    model.Q.fill(0.0)
+    model.Q[center, center] = 1.0
+    model.tau_map = np.ones_like(model.tau_map) * 5.0
+    model.tau_map[center, :] = 1.0
+    model.tau_steps = np.ceil(model.tau_map / model.dt).astype(int)
+    model.win = int(model.tau_steps.max()) + 1
+    model.bufQ = np.zeros((model.L, model.L, model.win), dtype=np.float64)
+    model.ceff_map = model.a_map / (model.tau_map + 1e-12)
+    results, _ = model.run(xi_amp=0.05, seed=0, out_dir=str(tmp_path))
+
+    assert results["anisotropy_max_pct"] > 0
