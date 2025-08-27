@@ -16,12 +16,6 @@ import numpy as np
 
 from ..utils.utils import RateLogger, spectral_entropy, anisotropy_from_ceff_map
 
-DEFAULT_DTYPE = "float64"
-def _as_dtype(name):
-    if name in ("float64","double","np.float64"): return "float64"
-    if name in ("float32","single","np.float32"): return "float32"
-    return DEFAULT_DTYPE
-
 
 class DOFTModel:
     """Delayed oscillator field theory model.
@@ -109,9 +103,6 @@ class DOFTModel:
         j = self.bidx % self.win
         self.bufQ[:, :, j] = self.Q
         self.bidx += 1
-
-    def _to_numpy(self, T):
-        return np.array(T, dtype=np.float64, copy=True)
 
     def _estimate_hbar_eff(self) -> float:
         """Estimate an effective Planck constant via spectral entropy.
