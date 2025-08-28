@@ -134,18 +134,26 @@ Take time to see this document [docs/protocols/iteration1_phase1.md](docs/protoc
 
 
 ```bash
-export PYTHONPATH="$PWD/src"   # o pip install -e .
+export PYTHONPATH="$PWD/src"   # or pip install -e .
 ```
 
-### Reproduce a short sweep
+### Run experiments from configs
 
-```bash
-python -m doft.simulation.run_sim
-```
+The helper scripts read parameters from JSON files under `configs/`.
 
-Generates a `summary.csv` with one row per experiment/seed and the main
-metrics such as `ceff_pulse`, anisotropy and `hbar_eff`. Results are
-written to a timestamped directory under `runs/`.
+- **Closed–passive Phase 1 sweep**
+
+  ```bash
+  bash scripts/run_phase1.sh   # uses configs/config_phase1.json
+  ```
+
+- **Chaos LPC test**
+
+  ```bash
+  bash scripts/run_quick.sh    # uses configs/config_chaos.json
+  ```
+
+Each run writes results to a timestamped directory under `runs/`.
 
 ### Self-averaging report
 

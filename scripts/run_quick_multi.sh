@@ -2,6 +2,9 @@
 set -euo pipefail
 
 PAR="${PAR:-4}"   # number of shards in parallel
+export DOFT_CONFIG="${DOFT_CONFIG:-configs/config_chaos.json}"
+
+echo "# using config: $DOFT_CONFIG"
 
 for i in $(seq 0 $((PAR-1))); do
   echo ">> shard $i  (SEED_OFFSET=$((i*1000)))"

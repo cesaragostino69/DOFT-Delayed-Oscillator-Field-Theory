@@ -51,7 +51,7 @@ With the environment set up and the files updated, you can now launch the simula
 
 3.1. The Main Script
 
-The scripts/run_phase1.sh script is the single entry point you need. It handles setting variables, checking the environment, and launching the Python simulator with built-in Phase 1 parameters.
+The `scripts/run_phase1.sh` script is the single entry point you need. It reads parameters from `configs/config_phase1.json`, handles setting variables, checks the environment, and launches the Python simulator.
 
 3.2. CPU Execution
 
@@ -66,6 +66,8 @@ If your machine has a CUDA-compatible NVIDIA GPU and you have installed the PyTo
 USE_GPU=1 bash scripts/run_phase1.sh
 
 The script will verify if a GPU is available. If not, it will notify you and proceed with the execution on the CPU.
+
+*For a quick chaos LPC test use `bash scripts/run_quick.sh`, which loads `configs/config_chaos.json`.*
 
 Step 4: Results
 

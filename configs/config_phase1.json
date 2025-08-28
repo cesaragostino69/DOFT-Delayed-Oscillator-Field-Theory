@@ -30,14 +30,6 @@
         {"mean": 0.67, "std": 0.01}
       ],
       "seeds": [101, 102, 103, 104, 105]
-    },
-    {
-      "name": "ExperimentB_Chaos_LPC_Test",
-      "experiment_type": "chaos",
-      "gamma": -0.01,
-      "a": [{"mean": 1.0, "std": 0.01}],
-      "tau0": [{"mean": 1.0, "std": 0.01}],
-      "seeds": [201, 202]
     }
-  ]
-}
+    ]
+  }
