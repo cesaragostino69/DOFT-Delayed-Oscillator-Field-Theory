@@ -224,7 +224,7 @@ class DOFTModel:
 
     
     def _calculate_pulse_metrics(self, n_steps, noise_std: float = 0.0):
-        """Estimate wave-front speed using multiple noise-relative thresholds.
+        r"""Estimate wave-front speed using multiple noise-relative thresholds.
 
         Parameters
         ----------
@@ -389,14 +389,16 @@ class DOFTModel:
         windows_analyzed = len(valid_blocks)
         if windows_analyzed > 1:
             deltaK_neg_count = (valid_blocks['deltaK'][1:] <= 0).sum()
-            lpc_deltaK_neg_frac = deltaK_neg_count / (windows_analyzed - 1)
+            lpc_ok_frac = deltaK_neg_count / (windows_analyzed - 1)
         else:
-            lpc_deltaK_neg_frac = 0.0
+            lpc_ok_frac = 0.0
 
-        return {'lpc_deltaK_neg_frac': lpc_deltaK_neg_frac,
-                'lpc_vcount': 0,
-                'lpc_windows_analyzed': windows_analyzed,
-                'block_skipped': block_skipped}, blocks_df
+        return {
+            'lpc_ok_frac': lpc_ok_frac,
+            'lpc_vcount': 0,
+            'lpc_windows_analyzed': windows_analyzed,
+            'block_skipped': block_skipped,
+        }, blocks_df
 
     def run(self):
         # Adjust n_steps to account for the much smaller dt, simulating a similar physical duration.

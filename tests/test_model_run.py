@@ -47,6 +47,7 @@ def test_seed_reproducibility_lpc_metrics():
 def test_blocks_df_contains_block_skipped():
     model = create_model(seed=0)
     metrics, blocks_df = model._calculate_lpc_metrics(n_steps=7000)
+    assert 'lpc_ok_frac' in metrics
     assert 'block_skipped' in blocks_df.columns
     # block_skipped metric should match the count of skipped windows
     assert metrics['block_skipped'] == int((blocks_df['block_skipped'] == 1).sum())
@@ -63,3 +64,15 @@ def test_noise_floor_effect():
     # Effective speed should remain finite under varying noise floors
     assert np.isfinite(metrics_low['ceff_pulse'])
     assert np.isfinite(metrics_high['ceff_pulse'])
+
+
+def test_run_returns_required_fields():
+    model = create_model(seed=0)
+    metrics, _ = model.run()
+    required = {
+        'ceff_pulse_ic95_lo',
+        'ceff_pulse_ic95_hi',
+        'ceff_iso_diag',
+        'lpc_ok_frac',
+    }
+    assert required.issubset(metrics.keys())

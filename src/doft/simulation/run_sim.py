@@ -5,6 +5,8 @@ import numpy as np
 import time
 import json
 import os
+from pathlib import Path
+import subprocess
 
 from doft.models.model import DOFTModel
 
@@ -79,6 +81,7 @@ def main():
             run_metrics['tau_mean'] = tau_val
             run_metrics['gamma'] = gamma
             run_metrics['param_group'] = point_to_group.get((a_val, tau_val), 'unknown')
+            run_metrics['lorentz_window'] = 'NA'
             all_runs_data.append(run_metrics)
 
             if blocks_df is not None and not blocks_df.empty:
@@ -116,6 +119,21 @@ def main():
             'delay_interpolation': True,
         },
     }
+
+    repo_root = Path(__file__).resolve().parents[2]
+    try:
+        code_version = subprocess.check_output([
+            'git', 'rev-parse', 'HEAD'
+        ], cwd=repo_root).decode().strip()
+    except Exception:
+        code_version = 'unknown'
+
+    meta_data.update({
+        'manifest': 'MANIFESTO.md',
+        'code_version': code_version,
+        'seeds_detailed': [{'seed': s} for s in seeds],
+        'front_thresholds': [1.0, 3.0, 5.0],
+    })
     meta_output_path = os.path.join(output_dir, 'run_meta.json')
     with open(meta_output_path, 'w') as f:
         json.dump(meta_data, f, indent=4)
