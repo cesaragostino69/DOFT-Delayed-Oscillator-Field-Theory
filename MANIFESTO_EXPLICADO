@@ -1,8 +1,8 @@
 # Manifiesto DOFT — Para Humanos (v1.3)
 
-> *Una gira en lenguaje llano por la Teoría de Campo de Osciladores con Retardo (DOFT): de qué trata, por qué podría importar y cómo planeamos probarla—sin enterrarte en ecuaciones.*
+*Una gira en lenguaje llano por la Teoría de Campo de Osciladores con Retardo (DOFT): de qué trata, por qué podría importar y cómo planeamos probarla—sin enterrarte en ecuaciones.*
 
----
+⸻
 
 ## 0) ¿Cuál es la gran idea?
 
@@ -18,7 +18,7 @@ Siempre hay también un pequeño temblor en el sistema—piénsalo como el **pis
 
 Eso es DOFT en una sola respiración: **empujones retardados + ruido suave → ondas, relojes, geometría y todo lo que se construye encima.**
 
----
+⸻
 
 ## 1) Reglas básicas (nuestros “axiomas”, pero en tamaño humano)
 
@@ -37,7 +37,7 @@ Eso es DOFT en una sola respiración: **empujones retardados + ruido suave → o
 - **A6 — Alejar el zoom.**  
   Si agrupas muchos metrónomos, obtienes un “medio” suave con memoria de su pasado. Las ondas se mueven a cierta velocidad efectiva, y el “índice” del medio les dice cómo curvarse. **Horizontes**—lugares donde nada escapa—pueden formarse cuando el flujo supera a las ondas.
 
----
+⸻
 
 ## 2) Cómo hablamos de esto sin matemáticas
 
@@ -45,7 +45,7 @@ Eso es DOFT en una sola respiración: **empujones retardados + ruido suave → o
 - **Truco de memoria:** en lugar de rastrear cada tictac pasado perfectamente (imposible), guardamos un resumen corto e inteligente de la historia reciente—como tener unos pocos “ecos recordados”. Esto mantiene las simulaciones cuerdas y a la vez captura el comportamiento importante.
 - **Macromundo (alejado):** se ve como un medio ondulatorio familiar con rigidez local, amortiguamiento local, memoria local y un índice local que dice qué tan rápido van las ondas y cómo se curvan.
 
----
+⸻
 
 ## 3) De dónde provienen las “constantes” (en este cuadro)
 
@@ -56,7 +56,7 @@ Eso es DOFT en una sola respiración: **empujones retardados + ruido suave → o
 - **Constante de Newton (G) como sensibilidad del retardo a la energía.**  
   Si aumentar la energía local hace que los retardos se engrosen un poco (ralentizando las ondas), entonces los gradientes de actividad curvan las trayectorias—voilà, gravedad. La conversión exacta de “cuánto se engrosan los retardos por unidad de energía” a “qué tan fuerte es la gravedad” debe precisarse; esa derivación está al tope de nuestra hoja de ruta.
 
----
+⸻
 
 ## 4) “Firmas de bucle” y por qué los átomos lucen como lucen
 
@@ -67,7 +67,7 @@ Cerca de cúmulos apretados (“núcleos”), bucles diminutos atrapan giros de 
 - Los patrones de temporización de *wave-packets* (el “beat” y el “re-beat”) siguen potencias simples del número cuántico efectivo.
 - Las pendientes de esos pequeños desplazamientos se alinean con qué tan “blando” es el núcleo del ion.
 
----
+⸻
 
 ## 5) Gravedad, horizontes, antimateria (en lenguaje claro)
 
@@ -76,13 +76,13 @@ Cerca de cúmulos apretados (“núcleos”), bucles diminutos atrapan giros de 
 - **Brillo tipo Hawking:** en esa frontera, el temblor de fondo se procesa en un tenue siseo saliente con una temperatura determinada por qué tan brusca es la frontera.
 - **Antimateria:** en este cuadro, la gravedad se preocupa por el grosor del retardo, no por el “signo del vaivén”. Así que materia y antimateria deberían caer igual en primer orden.
 
----
+⸻
 
 ## 6) La Ley de Preservación del Caos (LPC), experiencia vivida
 
 Seguimos un simple “medidor de caos” (piensa: qué impredecible es la malla en una ventana corta). En juegos cerrados el medidor no debe explotar. En juegos abiertos permitimos entrada/salida de caos, y una parte se plancha como calor o alisado. Si el medidor se dispara, dejamos que una **freno** suave actúe, atenuando solo los ecos más rápidos (las memorias diminutas que causan el ping‑pong desbocado). **Esto no es hacer trampa; es cómo los sistemas reales evitan detonar: retroalimentación y disipación.**
 
----
+⸻
 
 ## 7) Preguntas difíciles que hemos enfrentado (y cómo respondemos)
 
@@ -92,7 +92,7 @@ Seguimos un simple “medidor de caos” (piensa: qué impredecible es la malla 
 - **“Los puntos críticos pueden no promediar—¿y entonces?”** Medimos qué tan bien promedian las cosas al escalar. Si cantidades clave se niegan a asentarse a medida que los sistemas crecen (cuando deberían), entonces nuestras afirmaciones de universalidad son erróneas. Ese es un modo de falla incorporado.
 - **“Todavía nos deben derivaciones reales para ħ y G.”** De acuerdo. Hemos esbozado los mecanismos; la matemática detallada está en la cima de nuestra lista de tareas y forma parte de la hoja de ruta pública de abajo.
 
----
+⸻
 
 ## 8) Qué puede probarse (y qué hundiría la idea)
 
@@ -101,7 +101,7 @@ Seguimos un simple “medidor de caos” (piensa: qué impredecible es la malla 
 - **Pendiente tipo Hawking.** Construye un horizonte de laboratorio y mide cómo cambia el siseo saliente con la brusquedad del horizonte. El vínculo lineal predicho viene con un coeficiente fijado por la memoria extraída. Si se desvía más allá de los márgenes de error, o nuestra extracción de memoria es mala o el relato de retardo‑a‑índice es incorrecto.
 - **Caída de antimateria.** Si la antimateria cae de manera consistentemente distinta en orden líder, DOFT (tal como está) está en problemas.
 
----
+⸻
 
 ## 9) Cómo ejecutamos esto en la práctica (para no programadores)
 
@@ -111,7 +111,7 @@ Seguimos un simple “medidor de caos” (piensa: qué impredecible es la malla 
 - Seguimos tableros simples: límite de velocidad estimado, piso tipo ħ, qué tan bien promedian las cosas, si el caos está bajo control, cuán anisotrópicas (dependientes de dirección) son, y cuántas veces tuvo que ayudar el freno.
 - Publicamos archivos crudos y de resumen y las configuraciones exactas para que cualquiera pueda reejecutar y discutir con nosotros.
 
----
+⸻
 
 ## 10) Hoja de ruta (próximos 6–12 meses)
 
@@ -122,7 +122,7 @@ Seguimos un simple “medidor de caos” (piensa: qué impredecible es la malla 
 5. **Apretón de manos en gravedad análoga.** Usar nuestra memoria extraída para predecir la pendiente del horizonte de laboratorio; comparar cara a cara con datos.
 6. **Contrachequeos atómicos.** Rechequear tres alcalinos (Na, Rb, Cs) para el colapso y las leyes de temporización.
 
----
+⸻
 
 ## 11) Glosario amigable
 
@@ -134,13 +134,13 @@ Seguimos un simple “medidor de caos” (piensa: qué impredecible es la malla 
 - **LPC (Ley de Preservación del Caos):** el caos puede moverse y ser domado, pero no puede explotar gratis en una caja cerrada.
 - **Auto-promediado:** ¿una muestra más grande luce más calma y típica? Si sí, genial. Si no, cuidado con la “rareza crítica”.
 
----
+⸻
 
 ## 12) Una filosofía en un párrafo
 
 La realidad es comunicación con retardo. De innumerables intercambios diminutos—nunca perfectamente instantáneos, nunca perfectamente silenciosos—se coagulan patrones. El espacio es nuestra contabilidad de cuánto tarda la influencia; el tiempo es el pulso de esas influencias; la materia y los campos son los riffs duraderos que esos pulsos sostienen. **El orden es caos recordado.** El mundo es lo que los ecos eligieron conservar.
 
----
+⸻
 
 ## 13) Cómo ayudar
 
