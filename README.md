@@ -18,10 +18,10 @@ The project's goals are:
 [This is the DORF Manifesto](./MANIFESTO.md)
 
 [This is the DORF Manifesto uses plain language and analogies](./MANIFESTO_EXPLAINED.md)
-*This text uses plain language and analogies to make DOFT accessible to non-specialists. It does not replace the technical formulation or aim to provoke; any simplification is intentional to aid understanding.*
+* .This text uses plain language and analogies to make DOFT accessible to non-specialists. It does not replace the technical formulation or aim to provoke; any simplification is intentional to aid understanding.*
 
 [This is the DORF Manifesto en lenguaje coloquial y analogías](./MANIFESTO_EXPLICADO.md)
-*Este texto usa lenguaje coloquial y analogías para acercar DOFT a lectores no especialistas. No sustituye la formulación técnica ni busca polemizar; cualquier simplificación es intencional para facilitar la comprensión.*
+*. Este texto usa lenguaje coloquial y analogías para acercar DOFT a lectores no especialistas. No sustituye la formulación técnica ni busca polemizar; cualquier simplificación es intencional para facilitar la comprensión.*
 
 ---
 
