@@ -39,15 +39,11 @@ src/doft/model.py
 
 src/doft/run_sim.py
 
-2.2. Create Configuration and Runner Script
-
-The following files need to be created.
-
-Create the configuration file configs/config_phase1.json.
+2.2. Create Runner Script
 
 Create the execution script scripts/run_phase1.sh.
 
-Make sure their content is copied exactly from the code blocks I provided.
+Make sure its content is copied exactly from the code block I provided.
 
 Step 3: Running the Phase 1 Experiments
 
@@ -55,27 +51,25 @@ With the environment set up and the files updated, you can now launch the simula
 
 3.1. The Main Script
 
-The scripts/run_phase1.sh script is the single entry point you need. It handles setting variables, checking the environment, and launching the Python simulator with the correct Phase 1 configuration.
+The scripts/run_phase1.sh script is the single entry point you need. It handles setting variables, checking the environment, and launching the Python simulator with built-in Phase 1 parameters.
 
 3.2. CPU Execution
 
 To run all Phase 1 simulations using your machine's CPU cores:
 
-# N_JOBS=4 will use 4 processes in parallel. Adjust this to the number of cores on your machine.
-N_JOBS=4 bash scripts/run_phase1.sh
+bash scripts/run_phase1.sh
 
 3.3. GPU Execution
 
 If your machine has a CUDA-compatible NVIDIA GPU and you have installed the PyTorch wheels, you can accelerate the simulation as follows:
 
-# N_JOBS is typically kept at 1.
-N_JOBS=1 bash scripts/run_phase1.sh
+USE_GPU=1 bash scripts/run_phase1.sh
 
 The script will verify if a GPU is available. If not, it will notify you and proceed with the execution on the CPU.
 
 Step 4: Results
 
-Upon completion, the script will create a new directory inside the /results folder. The directory name will include the date and time of the run, for example: results/phase1_run_20250825_183000.
+Upon completion, the script will create a new directory inside the runs folder. The directory name will include the date and time of the run, for example: runs/phase1_run_20250825_183000.
 
 Inside that folder, you will find the simulation artifacts (runs.csv, blocks.csv, etc.), ready for analysis.
 

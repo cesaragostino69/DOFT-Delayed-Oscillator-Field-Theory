@@ -125,9 +125,9 @@ export PYTHONPATH="$PWD/src"   # o pip install -e .
 python -m doft.simulation.run_sim
 ```
 
-- `--n-jobs` controls parallel workers (set to `1` for serial execution).
-- Generates a `summary.csv` with one row per experiment/seed and the main
-  metrics such as `ceff_pulse`, anisotropy and `hbar_eff`.
+Generates a `summary.csv` with one row per experiment/seed and the main
+metrics such as `ceff_pulse`, anisotropy and `hbar_eff`. Results are
+written to a timestamped directory under `runs/`.
 
 ### Self-averaging report
 
