@@ -12,19 +12,17 @@ from doft.models.model import DOFTModel
 def main():
     """
     Main orchestrator for the DOFT Phase 1 counter-trial.
-    This version corrects issues from Audit #0006.
+    This version incorporates numerical stability fixes based on audit feedback.
     """
     parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
     args = parser.parse_args()
 
-    # --- "Break the Constant" Sweep Configuration (Experiment A) ---
-    # AUDIT #0006 FIX: Execute the full 9-point list (with duplicates) to match the spec verbatim.
+    # --- Sweep Configuration ---
     group1 = [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)]
     group2 = [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)]
     group3 = [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)]
-    simulation_points = group1 + group2 + group3 # This list now has 9 elements.
+    simulation_points = group1 + group2 + group3
 
-    # We still create a map to label the groups correctly in the output CSV.
     point_to_group = {}
     for pt in group1: point_to_group[pt] = 'g1'
     for pt in group2: point_to_group[pt] = 'g2'
@@ -33,6 +31,11 @@ def main():
     seeds = [42, 123, 456, 789, 1011]
     gamma = 0.05
     grid_size = 100
+
+    # STABILITY FIX: Define reference parameters for nondimensionalization.
+    # We use the central point of the sweep as the reference scale.
+    a_ref = 1.0
+    tau_ref = 1.0
     
     # --- Create Unique Output Directory ---
     base_run_dir = 'runs'
@@ -47,29 +50,36 @@ def main():
     all_runs_data = []
     all_blocks_data = []
     
-    print(f"🚀 Starting DOFT Phase-1 Simulation Sweep across {len(simulation_points)} points (full 3x3 grid)...")
+    print(f"🚀 Starting DOFT Phase-1 Simulation Sweep across {len(simulation_points)} points...")
     
     run_counter = 0
     total_sims = len(simulation_points) * len(seeds)
 
-    for (a_mean, tau_mean) in simulation_points:
+    for (a_val, tau_val) in simulation_points:
         for seed in seeds:
             run_counter += 1
             run_id = f"run_{int(time.time())}_{run_counter}"
-            print(f"[{run_counter}/{total_sims}] Running sim: a={a_mean}, τ={tau_mean}, seed={seed}")
+            print(f"[{run_counter}/{total_sims}] Running sim: a={a_val}, τ={tau_val}, seed={seed}")
             
+            # STABILITY FIX: Pass reference scales to the model for stabilization.
             model = DOFTModel(
-                grid_size=grid_size, a=a_mean, tau=tau_mean, gamma=gamma, seed=seed
+                grid_size=grid_size,
+                a=a_val,
+                tau=tau_val,
+                a_ref=a_ref,
+                tau_ref=tau_ref,
+                gamma=gamma,
+                seed=seed
             )
             
             run_metrics, blocks_df = model.run()
             
             run_metrics['run_id'] = run_id
             run_metrics['seed'] = seed
-            run_metrics['a_mean'] = a_mean
-            run_metrics['tau_mean'] = tau_mean
+            run_metrics['a_mean'] = a_val
+            run_metrics['tau_mean'] = tau_val
             run_metrics['gamma'] = gamma
-            run_metrics['param_group'] = point_to_group.get((a_mean, tau_mean), 'unknown')
+            run_metrics['param_group'] = point_to_group.get((a_val, tau_val), 'unknown')
             all_runs_data.append(run_metrics)
             
             if blocks_df is not None and not blocks_df.empty:
@@ -89,15 +99,20 @@ def main():
         blocks_df_final.to_csv(blocks_output_path, index=False)
         print(f"--> Wrote {len(blocks_df_final)} rows to {blocks_output_path}")
     else:
-        print("--> No block data generated for blocks.csv (check LPC settings if this is unexpected).")
+        print("--> No block data generated for blocks.csv.")
 
     meta_data = {
-        'run_directory': f'phase1_run_{timestamp}', 'timestamp_utc': time.asctime(time.gmtime()),
-        'total_runs_in_sweep': run_counter, 'simulation_points': simulation_points,
-        'seeds_used': seeds, 'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
-        'analysis_params': {
-            'dt': 0.1, 'lpc_window_size': 2048, 'lpc_overlap': 1024,
-            'pulse_num_angles': 16, 'pulse_hysteresis': (0.1, 0.07)
+        'run_directory': f'phase1_run_{timestamp}',
+        'timestamp_utc': time.asctime(time.gmtime()),
+        'total_runs_in_sweep': run_counter,
+        'simulation_points': simulation_points,
+        'seeds_used': seeds,
+        'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
+        'stability_params': {
+            'nondimensional_dt': 0.005,
+            'a_ref': a_ref,
+            'tau_ref': tau_ref,
+            'delay_interpolation': True
         }
     }
     meta_output_path = os.path.join(output_dir, 'run_meta.json')
