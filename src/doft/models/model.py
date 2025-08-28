@@ -188,11 +188,39 @@ class DOFTModel:
                 )
                 self.dt_nondim = self.min_dt_nondim
                 self.dt = self.dt_nondim * self.tau_ref
+                self.delay_in_steps = self.tau / self.dt
+                required_history = int(math.ceil(self.tau / self.dt))
+                if self.history_steps < required_history:
+                    new_history_steps = required_history + 5
+                    new_Q_history = np.zeros(
+                        (new_history_steps, self.grid_size, self.grid_size),
+                        dtype=self.Q_history.dtype,
+                    )
+                    for i in range(self.history_steps):
+                        new_Q_history[(t_idx - i) % new_history_steps] = self.Q_history[
+                            (t_idx - i) % self.history_steps
+                        ]
+                    self.Q_history = new_Q_history
+                    self.history_steps = new_history_steps
                 break
 
             self.dt_nondim = new_dt
             self.dt = self.dt_nondim * self.tau_ref
             self.delay_in_steps = self.tau / self.dt
+
+            required_history = int(math.ceil(self.tau / self.dt))
+            if self.history_steps < required_history:
+                new_history_steps = required_history + 5
+                new_Q_history = np.zeros(
+                    (new_history_steps, self.grid_size, self.grid_size),
+                    dtype=self.Q_history.dtype,
+                )
+                for i in range(self.history_steps):
+                    new_Q_history[(t_idx - i) % new_history_steps] = self.Q_history[
+                        (t_idx - i) % self.history_steps
+                    ]
+                self.Q_history = new_Q_history
+                self.history_steps = new_history_steps
 
     def _calculate_pulse_metrics(self, n_steps):
         self.Q.fill(0.0); self.P.fill(0.0); self.Q_history.fill(0.0)
