@@ -258,6 +258,9 @@ class DOFTModel:
         # Inject Gaussian pulse
         x, y = np.meshgrid(np.arange(self.grid_size), np.arange(self.grid_size))
         self.Q += 0.1 * np.exp(-((x - center) ** 2 + (y - center) ** 2) / 10.0)
+        # Update stored energy after pulse injection so the stability guard
+        # does not interpret the added pulse energy as a spurious increase.
+        self.last_energy = compute_energy(self.Q, self.P)
 
         num_angles = 16
         thetas = np.linspace(0, 2 * np.pi, num_angles, endpoint=False)
@@ -292,17 +295,34 @@ class DOFTModel:
         c_thetas = []
         c_thetas_ci_low = []
         c_thetas_ci_high = []
-        for idx, theta in enumerate(thetas):
-            detections = np.array(
-                list(dict.fromkeys(front_detections[(theta, 1)]))
-            )
-            if len(detections) < 10:
-                continue
-            times, dists = detections[:, 0], detections[:, 1]
-            res = theilslopes(dists, times, 0.95)
-            c_thetas.append(res[0])
-            c_thetas_ci_low.append(res[2])
-            c_thetas_ci_high.append(res[3])
+
+        # Collect per-threshold speeds for later aggregation/inspection
+        c_by_thr = {thr_idx: [] for thr_idx in range(len(thresholds))}
+        ci_low_by_thr = {thr_idx: [] for thr_idx in range(len(thresholds))}
+        ci_high_by_thr = {thr_idx: [] for thr_idx in range(len(thresholds))}
+
+        for theta in thetas:
+            c_thr = []
+            ci_lo_thr = []
+            ci_hi_thr = []
+            for thr_idx in range(len(thresholds)):
+                detections = np.array(
+                    list(dict.fromkeys(front_detections[(theta, thr_idx)]))
+                )
+                if len(detections) < 10:
+                    continue
+                times, dists = detections[:, 0], detections[:, 1]
+                res = theilslopes(dists, times, 0.95)
+                c_thr.append(res[0])
+                ci_lo_thr.append(res[2])
+                ci_hi_thr.append(res[3])
+                c_by_thr[thr_idx].append(res[0])
+                ci_low_by_thr[thr_idx].append(res[2])
+                ci_high_by_thr[thr_idx].append(res[3])
+            if c_thr:
+                c_thetas.append(float(np.mean(c_thr)))
+                c_thetas_ci_low.append(float(np.mean(ci_lo_thr)))
+                c_thetas_ci_high.append(float(np.mean(ci_hi_thr)))
 
         if not c_thetas:
             return {
@@ -316,6 +336,7 @@ class DOFTModel:
                 'ceff_iso_y': 0.0,
                 'ceff_iso_z': 0.0,
                 'ceff_iso_diag': 0.0,
+                'ceff_pulse_by_thr': [0.0 for _ in thresholds],
             }
 
         c_thetas = np.array(c_thetas)
@@ -336,6 +357,11 @@ class DOFTModel:
             else 0.0
         )
 
+        c_by_thr_list = [
+            float(np.mean(c_by_thr[i])) if c_by_thr[i] else 0.0
+            for i in range(len(thresholds))
+        ]
+
         return {
             'xi_floor': xi_floor,
             'ceff_pulse': mean_c,
@@ -347,6 +373,7 @@ class DOFTModel:
             'ceff_iso_y': c_y,
             'ceff_iso_z': c_z,
             'ceff_iso_diag': c_diag,
+            'ceff_pulse_by_thr': c_by_thr_list,
         }
 
     def _calculate_lpc_metrics(self, n_steps):

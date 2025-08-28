@@ -6,6 +6,8 @@ from pathlib import Path
 
 import numpy as np
 
+
+
 # Ensure the package import works when repository root is the current directory
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -33,7 +35,44 @@ def test_pulse_metrics_numeric():
     assert "ceff_pulse_ic95_lo" in metrics
     assert "ceff_pulse_ic95_hi" in metrics
     assert "ceff_iso_diag" in metrics
+    assert "ceff_pulse_by_thr" in metrics
     assert np.isfinite(metrics["ceff_pulse"])
+
+
+def test_all_thresholds_affect_ceff_pulse(monkeypatch):
+    model = create_model(seed=0)
+
+    # Fake integrator that produces a steadily expanding front
+    def fake_step(self, t_idx):
+        center = self.grid_size // 2
+        radius = t_idx + 1  # expand one cell per step
+        x, y = np.meshgrid(np.arange(self.grid_size), np.arange(self.grid_size))
+        dist = np.sqrt((x - center) ** 2 + (y - center) ** 2)
+        self.Q = (dist <= radius).astype(float)
+        self.Q_history[t_idx % self.history_steps] = self.Q
+
+    monkeypatch.setattr(DOFTModel, "_step_euler", fake_step)
+
+    # Patch slope estimator so each threshold yields a different speed
+    slopes = [1.0, 2.0, 4.0]
+    call = {"n": 0}
+
+    def fake_theilslopes(dists, times, alpha):
+        idx = call["n"] % 3
+        call["n"] += 1
+        s = slopes[idx]
+        return s, 0.0, s - 0.1, s + 0.1
+
+    monkeypatch.setattr("doft.models.model.theilslopes", fake_theilslopes)
+
+    metrics = model._calculate_pulse_metrics(n_steps=60, noise_std=0.0)
+    speeds = np.array(metrics["ceff_pulse_by_thr"])
+
+    assert np.isclose(metrics["ceff_pulse"], np.mean(speeds))
+    mean_all = metrics["ceff_pulse"]
+    for i in range(3):
+        subset_mean = np.mean([s for j, s in enumerate(speeds) if j != i])
+        assert not np.isclose(subset_mean, mean_all)
 
 
 def test_seed_reproducibility_lpc_metrics():
