@@ -44,10 +44,13 @@ def anisotropy_from_ceff_map(ceff_map: np.ndarray) -> float:
 def spectral_entropy(x, eps: float = 1e-12) -> float:
     """Simple spectral entropy on a 1D real signal using NumPy.
 
-    The input is converted to ``float64``. The natural logarithm is used;
-    changing the log base only scales the result by a constant factor.
+    The input is converted to ``float64``. Returns ``NaN`` when the input
+    contains non-finite values. The natural logarithm is used; changing the
+    log base only scales the result by a constant factor.
     """
     x = np.asarray(x, dtype=np.float64)
+    if not np.all(np.isfinite(x)):
+        return float("nan")
     if x.size < 8:
         return float("nan")
     x = x - np.mean(x)
