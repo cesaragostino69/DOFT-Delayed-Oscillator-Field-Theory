@@ -150,19 +150,24 @@ class DOFTModel:
             if scale > self.scale_threshold:
                 Q_new /= scale
                 P_new /= scale
+                self.Q_history /= scale
                 self.scale_accum *= scale
+                self.last_energy /= scale ** 2
+                energy_prev = self.last_energy
 
             energy_new = compute_energy(Q_new, P_new)
+            energy_prev_phys = energy_prev * self.scale_accum ** 2
+            energy_new_phys = energy_new * self.scale_accum ** 2
 
             if (
                 np.isfinite(P_new).all()
                 and np.isfinite(Q_new).all()
-                and energy_new <= energy_prev + 1e-12
+                and energy_new_phys <= energy_prev_phys + 1e-12
             ):
                 self.P, self.Q = P_new, Q_new
                 self.Q_history[t_idx % self.history_steps] = self.Q
                 self.last_energy = energy_new
-                self.energy_log.append(energy_new)
+                self.energy_log.append(energy_new_phys)
                 self.scale_log.append(self.scale_accum)
                 break
 
