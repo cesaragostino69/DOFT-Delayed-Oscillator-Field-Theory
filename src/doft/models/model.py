@@ -3,11 +3,23 @@ import numpy as np
 import pandas as pd
 from scipy.stats import theilslopes
 import math
+import warnings
 
 from doft.utils.utils import spectral_entropy
 
+
 class DOFTModel:
-    def __init__(self, grid_size, a, tau, a_ref, tau_ref, gamma, seed, dt_nondim: float = 0.005):
+    def __init__(
+        self,
+        grid_size,
+        a,
+        tau,
+        a_ref,
+        tau_ref,
+        gamma,
+        seed,
+        dt_nondim: float | None = None,
+    ):
         self.grid_size = grid_size
         self.seed = seed
         self.rng = np.random.default_rng(self.seed)
@@ -17,16 +29,27 @@ class DOFTModel:
         self.tau_ref = tau_ref  # Reference time scale (e.g., 1.0)
         self.a_ref = a_ref      # Reference coupling scale (e.g., 1.0)
 
-        # STABILITY FIX #2: SAFE TIME STEP
-        # Use a small, dimensionless time step as recommended by auditors.
-        self.dt_nondim = dt_nondim
-        self.min_dt_nondim = 1e-6  # Lower bound to prevent infinite halving loops
-        self.dt = self.dt_nondim * self.tau_ref  # Actual dt in "physical" units
-
         # Nondimensionalize the parameters for this specific run
         self.a_nondim = a / self.a_ref
         self.tau_nondim = tau / self.tau_ref
         self.gamma_nondim = gamma * self.tau_ref
+
+        # STABILITY FIX #2: SAFE TIME STEP
+        # Determine a stable dimensionless time step based on current parameters.
+        denom = self.gamma_nondim + abs(self.a_nondim) + 1.0
+        if denom > 0:
+            gamma_bound = 0.1 / denom
+        else:
+            gamma_bound = float("inf")
+        safe_dt = min(0.02, 0.1, self.tau_nondim / 50.0, gamma_bound)
+        if dt_nondim is not None and not math.isclose(dt_nondim, safe_dt, rel_tol=0, abs_tol=1e-12):
+            warnings.warn(
+                f"Requested dt_nondim={dt_nondim} replaced by stable dt_nondim={safe_dt}",
+                RuntimeWarning,
+            )
+        self.dt_nondim = safe_dt
+        self.min_dt_nondim = 1e-6  # Lower bound to prevent infinite halving loops
+        self.dt = self.dt_nondim * self.tau_ref  # Actual dt in "physical" units
 
         # The physical tau is still needed for delay calculation
         self.tau = tau
@@ -35,7 +58,7 @@ class DOFTModel:
         self.delay_in_steps = self.tau / self.dt
 
         # Correctly size the history buffer with the new, smaller dt
-        self.history_steps = int(math.ceil(self.tau / self.dt)) + 5 # Added safe margin
+        self.history_steps = int(math.ceil(self.tau / self.dt)) + 5  # Added safe margin
 
         self.Q = np.zeros((grid_size, grid_size), dtype=np.float64)
         self.P = np.zeros((grid_size, grid_size), dtype=np.float64)

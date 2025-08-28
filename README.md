@@ -116,6 +116,18 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Time step selection
+
+The simulator chooses a safe dimensionless time step automatically to
+avoid runaway integrations. For each run the step is clamped via
+
+```
+dt_nondim = min(0.02, 0.1, tau_nondim/50, 0.1/(gamma_nondim + |a_nondim| + 1))
+```
+
+Any configuration requesting a larger step triggers a warning and the
+value above is used instead.
+
 ## Development Guidelines
 
 Take time to see this document [docs/protocols/iteration1_phase1.md](docs/protocols/iteration1_phase1.md) for guidelines to participate in this project.

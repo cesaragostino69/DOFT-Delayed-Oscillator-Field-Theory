@@ -31,7 +31,6 @@ def main():
     seeds = [42, 123, 456, 789, 1011]
     gamma = 0.05
     grid_size = 100
-    dt_nondim = 0.005
 
     # STABILITY FIX: Define reference parameters for nondimensionalization.
     # We use the central point of the sweep as the reference scale.
@@ -71,7 +70,6 @@ def main():
                 tau_ref=tau_ref,
                 gamma=gamma,
                 seed=seed,
-                dt_nondim=dt_nondim,
             )
 
             run_metrics, blocks_df = model.run()
@@ -111,7 +109,7 @@ def main():
         'seeds_used': seeds,
         'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
         'stability_params': {
-            'nondimensional_dt': dt_nondim,
+            'dt_logic': 'min(0.02, 0.1, tau_nondim/50, 0.1/(gamma_nondim + |a_nondim| + 1))',
             'a_ref': a_ref,
             'tau_ref': tau_ref,
             'delay_interpolation': True,
