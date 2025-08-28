@@ -29,6 +29,53 @@ def compute_energy(Q: np.ndarray, P: np.ndarray) -> float:
     return float(kinetic + potential)
 
 
+def compute_total_energy(
+    Q: np.ndarray,
+    P: np.ndarray,
+    K: float,
+    y_states: np.ndarray | None = None,
+    kernel_params: dict | None = None,
+) -> float:
+    """Return lattice energy including coupling and memory contributions.
+
+    Parameters
+    ----------
+    Q, P:
+        Field displacement and momentum arrays.
+    K:
+        Coupling coefficient. When zero the coupling term vanishes.
+    y_states:
+        Optional array of auxiliary Prony-chain states with shape
+        ``(M, *Q.shape)``.
+    kernel_params:
+        Parameters of the Prony chain. Only the ``"weights"`` array is
+        consulted; if absent or empty the memory contribution is skipped.
+
+    Notes
+    -----
+    The returned energy is the sum of the kinetic and potential energy, a
+    nearest-neighbour coupling term ``K (\nabla Q)^2`` assuming periodic
+    boundaries, and the quadratic energy stored in the memory states.
+    """
+
+    kinetic = 0.5 * np.sum(P**2)
+    potential = 0.5 * np.sum(Q**2)
+
+    coupling = 0.0
+    if K != 0.0:
+        grad_x = np.roll(Q, -1, axis=0) - Q
+        grad_y = np.roll(Q, -1, axis=1) - Q
+        coupling = 0.5 * K * np.sum(grad_x**2 + grad_y**2)
+
+    memory = 0.0
+    if y_states is not None and kernel_params:
+        weights = np.asarray(kernel_params.get("weights", []), dtype=float)
+        if weights.size and y_states.shape[0] == weights.size:
+            memory = 0.5 * np.sum(weights[:, None, None] * y_states**2)
+
+    return float(kinetic + potential + coupling + memory)
+
+
 class DOFTModel:
     def __init__(
         self,
@@ -43,6 +90,8 @@ class DOFTModel:
         dt_nondim: float | None = None,
         max_pulse_steps: int | None = None,
         max_lpc_steps: int | None = None,
+        kernel_params: dict | None = None,
+        energy_mode: str = "auto",
     ):
         self.grid_size = grid_size
         self.seed = seed
@@ -90,9 +139,29 @@ class DOFTModel:
         self.P = np.zeros((grid_size, grid_size), dtype=np.float64)
         self.Q_history = np.zeros((self.history_steps, grid_size, grid_size), dtype=np.float64)
 
+        # Memory states for Prony-chain kernels (optional)
+        self.kernel_params = kernel_params
+        if kernel_params and kernel_params.get("weights") is not None:
+            n_modes = len(kernel_params.get("weights", []))
+            self.y_states = np.zeros((n_modes, grid_size, grid_size), dtype=np.float64)
+        else:
+            self.y_states = None
+
+        # Select energy functional
+        if energy_mode == "basic":
+            self.energy_fn = compute_energy
+        elif energy_mode == "total" or (
+            energy_mode == "auto" and (self.a_nondim != 0.0 or self.y_states is not None)
+        ):
+            self.energy_fn = lambda Q, P: compute_total_energy(
+                Q, P, self.a_nondim, self.y_states, self.kernel_params
+            )
+        else:
+            self.energy_fn = compute_energy
+
         # Energy monitoring for source-free simulations
         self.energy_log: list[float] = []
-        self.last_energy = compute_energy(self.Q, self.P)
+        self.last_energy = self.energy_fn(self.Q, self.P)
 
         # Track scaling applied to the fields to avoid overflow
         self.scale_threshold = 1e6
@@ -199,7 +268,7 @@ class DOFTModel:
                 self.last_energy /= scale ** 2
                 energy_prev = self.last_energy
 
-            energy_new = compute_energy(Q_new, P_new)
+            energy_new = self.energy_fn(Q_new, P_new)
             energy_prev_phys = energy_prev * self.scale_accum ** 2
             energy_new_phys = energy_new * self.scale_accum ** 2
 
@@ -304,7 +373,7 @@ class DOFTModel:
         self.Q += 0.1 * np.exp(-((x - center) ** 2 + (y - center) ** 2) / 10.0)
         # Update stored energy after pulse injection so the stability guard
         # does not interpret the added pulse energy as a spurious increase.
-        self.last_energy = compute_energy(self.Q, self.P)
+        self.last_energy = self.energy_fn(self.Q, self.P)
 
         num_angles = 16
         thetas = np.linspace(0, 2 * np.pi, num_angles, endpoint=False)

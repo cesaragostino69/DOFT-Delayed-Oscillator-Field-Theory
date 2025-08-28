@@ -8,7 +8,7 @@ import math
 # Ensure package import works
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from doft.models.model import DOFTModel, compute_energy
+from doft.models.model import DOFTModel
 
 
 def test_dt_reduction_on_nonfinite():
@@ -72,7 +72,7 @@ def test_history_resize_after_multiple_halvings():
     model.Q_history = np.zeros((model.history_steps, model.grid_size, model.grid_size))
 
     model.Q = model.rng.normal(0, 0.1, model.Q.shape)
-    model.last_energy = compute_energy(model.Q, model.P)
+    model.last_energy = model.energy_fn(model.Q, model.P)
 
     initial_dt = model.dt_nondim
     model._step_euler(0)
