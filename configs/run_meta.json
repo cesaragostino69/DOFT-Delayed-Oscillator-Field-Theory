@@ -1,0 +1,17 @@
+{
+    "run_directory": "phase1_example",
+    "timestamp_utc": "1970-01-01 00:00:00",
+    "total_runs_in_sweep": 0,
+    "simulation_points": [],
+    "seeds_used": [],
+    "fixed_params": {
+        "gamma": 0.05,
+        "grid_size": 100
+    },
+    "stability_params": {
+        "nondimensional_dt": 0.005,
+        "a_ref": 1.0,
+        "tau_ref": 1.0,
+        "delay_interpolation": true
+    }
+}

@@ -7,7 +7,7 @@ import math
 from doft.utils.utils import spectral_entropy
 
 class DOFTModel:
-    def __init__(self, grid_size, a, tau, a_ref, tau_ref, gamma, seed):
+    def __init__(self, grid_size, a, tau, a_ref, tau_ref, gamma, seed, dt_nondim: float = 0.005):
         self.grid_size = grid_size
         self.seed = seed
         self.rng = np.random.default_rng(self.seed)
@@ -19,7 +19,7 @@ class DOFTModel:
 
         # STABILITY FIX #2: SAFE TIME STEP
         # Use a small, dimensionless time step as recommended by auditors.
-        self.dt_nondim = 0.005
+        self.dt_nondim = dt_nondim
         self.dt = self.dt_nondim * self.tau_ref  # Actual dt in "physical" units
 
         # Nondimensionalize the parameters for this specific run
