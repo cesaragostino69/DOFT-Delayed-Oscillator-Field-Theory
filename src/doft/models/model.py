@@ -8,6 +8,27 @@ import warnings
 from doft.utils.utils import spectral_entropy
 
 
+def compute_energy(Q: np.ndarray, P: np.ndarray) -> float:
+    """Return total nondimensional energy of the lattice.
+
+    Parameters
+    ----------
+    Q, P:
+        Field displacement and momentum arrays.
+
+    Notes
+    -----
+    Uses a simple quadratic energy: kinetic (``P``) plus potential (``Q``).
+    Coupling terms are omitted; this monitor is intended only to check that
+    the semi-implicit scheme with damping does not spuriously increase the
+    basic oscillator energy.
+    """
+
+    kinetic = 0.5 * np.sum(P ** 2)
+    potential = 0.5 * np.sum(Q ** 2)
+    return float(kinetic + potential)
+
+
 class DOFTModel:
     def __init__(
         self,
@@ -64,6 +85,10 @@ class DOFTModel:
         self.P = np.zeros((grid_size, grid_size), dtype=np.float64)
         self.Q_history = np.zeros((self.history_steps, grid_size, grid_size), dtype=np.float64)
 
+        # Energy monitoring for source-free simulations
+        self.energy_log: list[float] = []
+        self.last_energy = compute_energy(self.Q, self.P)
+
     def _get_delayed_q_interpolated(self, t_idx):
         """
         STABILITY FIX #3: LINEAR INTERPOLATION FOR DELAYS
@@ -95,6 +120,7 @@ class DOFTModel:
     def _step_euler(self, t_idx):
         Q_prev = self.Q.copy()
         P_prev = self.P.copy()
+        energy_prev = self.last_energy
 
         while True:
             Q_delayed = self._get_delayed_q_interpolated(t_idx)
@@ -112,17 +138,33 @@ class DOFTModel:
             # Leapfrog-style update for Q using the newly updated momentum
             Q_new = self.Q + self.dt_nondim * P_new
 
-            if np.isfinite(P_new).all() and np.isfinite(Q_new).all():
+            energy_new = compute_energy(Q_new, P_new)
+
+            if (
+                np.isfinite(P_new).all()
+                and np.isfinite(Q_new).all()
+                and energy_new <= energy_prev + 1e-12
+            ):
                 self.P, self.Q = P_new, Q_new
                 self.Q_history[t_idx % self.history_steps] = self.Q
+                self.last_energy = energy_new
+                self.energy_log.append(energy_new)
                 break
 
-            print(
-                f"WARNING: Non-finite values encountered at step {t_idx}. "
-                f"Reducing dt_nondim from {self.dt_nondim}"
-            )
+            if not (np.isfinite(P_new).all() and np.isfinite(Q_new).all()):
+                print(
+                    f"WARNING: Non-finite values encountered at step {t_idx}. "
+                    f"Reducing dt_nondim from {self.dt_nondim}"
+                )
+            else:
+                print(
+                    f"WARNING: Energy increased from {energy_prev} to {energy_new} at step {t_idx}. "
+                    f"Reducing dt_nondim from {self.dt_nondim}"
+                )
+
             self.P = P_prev.copy()
             self.Q = Q_prev.copy()
+            self.last_energy = energy_prev
             new_dt = self.dt_nondim * 0.5
             if new_dt < self.min_dt_nondim:
                 print(
