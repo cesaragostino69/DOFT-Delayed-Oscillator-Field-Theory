@@ -20,6 +20,7 @@ class DOFTModel:
         # STABILITY FIX #2: SAFE TIME STEP
         # Use a small, dimensionless time step as recommended by auditors.
         self.dt_nondim = dt_nondim
+        self.min_dt_nondim = 1e-6  # Lower bound to prevent infinite halving loops
         self.dt = self.dt_nondim * self.tau_ref  # Actual dt in "physical" units
 
         # Nondimensionalize the parameters for this specific run
@@ -69,23 +70,49 @@ class DOFTModel:
         return Q2 * frac + Q1 * (1.0 - frac)
 
     def _step_euler(self, t_idx):
-        Q_delayed = self._get_delayed_q_interpolated(t_idx)
+        Q_prev = self.Q.copy()
+        P_prev = self.P.copy()
 
-        # The equations of motion now use dimensionless parameters
-        K_term = self.a_nondim * (
-            np.roll(Q_delayed, 1, axis=0) + np.roll(Q_delayed, -1, axis=0) +
-            np.roll(Q_delayed, 1, axis=1) + np.roll(Q_delayed, -1, axis=1) - 4 * Q_delayed
-        )
-        # Semi-implicit update for P with gamma term treated implicitly
-        # P_new = (P - dt_nondim * Q + dt_nondim * K_term) / (1 + dt_nondim * gamma_nondim)
-        P_new = (
-            self.P - self.dt_nondim * self.Q + self.dt_nondim * K_term
-        ) / (1.0 + self.dt_nondim * self.gamma_nondim)
-        # Leapfrog-style update for Q using the newly updated momentum
-        Q_new = self.Q + self.dt_nondim * P_new
+        while True:
+            Q_delayed = self._get_delayed_q_interpolated(t_idx)
 
-        self.P, self.Q = P_new, Q_new
-        self.Q_history[t_idx % self.history_steps] = self.Q
+            # The equations of motion now use dimensionless parameters
+            K_term = self.a_nondim * (
+                np.roll(Q_delayed, 1, axis=0) + np.roll(Q_delayed, -1, axis=0) +
+                np.roll(Q_delayed, 1, axis=1) + np.roll(Q_delayed, -1, axis=1) - 4 * Q_delayed
+            )
+            # Semi-implicit update for P with gamma term treated implicitly
+            # P_new = (P - dt_nondim * Q + dt_nondim * K_term) / (1 + dt_nondim * gamma_nondim)
+            P_new = (
+                self.P - self.dt_nondim * self.Q + self.dt_nondim * K_term
+            ) / (1.0 + self.dt_nondim * self.gamma_nondim)
+            # Leapfrog-style update for Q using the newly updated momentum
+            Q_new = self.Q + self.dt_nondim * P_new
+
+            if np.isfinite(P_new).all() and np.isfinite(Q_new).all():
+                self.P, self.Q = P_new, Q_new
+                self.Q_history[t_idx % self.history_steps] = self.Q
+                break
+
+            print(
+                f"WARNING: Non-finite values encountered at step {t_idx}. "
+                f"Reducing dt_nondim from {self.dt_nondim}"
+            )
+            self.P = P_prev.copy()
+            self.Q = Q_prev.copy()
+            new_dt = self.dt_nondim * 0.5
+            if new_dt < self.min_dt_nondim:
+                print(
+                    f"ERROR: Minimum dt_nondim {self.min_dt_nondim} reached. "
+                    "Aborting step."
+                )
+                self.dt_nondim = self.min_dt_nondim
+                self.dt = self.dt_nondim * self.tau_ref
+                break
+
+            self.dt_nondim = new_dt
+            self.dt = self.dt_nondim * self.tau_ref
+            self.delay_in_steps = self.tau / self.dt
 
     def _calculate_pulse_metrics(self, n_steps):
         self.Q.fill(0.0); self.P.fill(0.0); self.Q_history.fill(0.0)
