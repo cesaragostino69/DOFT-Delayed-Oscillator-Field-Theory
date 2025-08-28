@@ -5,7 +5,6 @@ import numpy as np
 import time
 import json
 import os
-from itertools import product
 
 from doft.models.model import DOFTModel
 
@@ -88,13 +87,13 @@ def main():
 
     print(f"\n✅ Simulation sweep finished. Consolidating and writing results to {output_dir}...")
 
-    runs_df = pandas.DataFrame(all_runs_data)
+    runs_df = pd.DataFrame(all_runs_data)
     runs_output_path = os.path.join(output_dir, 'runs.csv')
     runs_df.to_csv(runs_output_path, index=False)
     print(f"--> Wrote {len(runs_df)} rows to {runs_output_path}")
 
     if all_blocks_data:
-        blocks_df_final = pandas.concat(all_blocks_data, ignore_index=True)
+        blocks_df_final = pd.concat(all_blocks_data, ignore_index=True)
         blocks_output_path = os.path.join(output_dir, 'blocks.csv')
         blocks_df_final.to_csv(blocks_output_path, index=False)
         print(f"--> Wrote {len(blocks_df_final)} rows to {blocks_output_path}")
