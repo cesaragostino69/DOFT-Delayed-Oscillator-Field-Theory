@@ -115,10 +115,14 @@ pip install -r requirements.txt
 Take time to see this document [docs/protocols/iteration1_phase1.md](docs/protocols/iteration1_phase1.md) for guidelines to participate in this project.
 
 
+```bash
+export PYTHONPATH="$PWD/src"   # o pip install -e .
+```
+
 ### Reproduce a short sweep
 
 ```bash
-python -m doft.simulation.run_sim --config configs/config_phase1.json --out results/demo_run --n-jobs 4
+python -m doft.simulation.run_sim
 ```
 
 - `--n-jobs` controls parallel workers (set to `1` for serial execution).
