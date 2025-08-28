@@ -30,6 +30,9 @@ class DOFTModel:
         # The physical tau is still needed for delay calculation
         self.tau = tau
 
+        # Precompute delay in time steps to avoid repeated calculation
+        self.delay_in_steps = self.tau / self.dt
+
         # Correctly size the history buffer with the new, smaller dt
         self.history_steps = int(math.ceil(self.tau / self.dt)) + 5 # Added safe margin
 
@@ -43,7 +46,7 @@ class DOFTModel:
         Improves accuracy and stability by interpolating between two past time steps
         instead of taking the nearest neighbor.
         """
-        delay_in_steps = self.tau / self.dt
+        delay_in_steps = self.delay_in_steps
 
         idx_floor = int(math.floor(delay_in_steps))
         idx_ceil = int(math.ceil(delay_in_steps))
