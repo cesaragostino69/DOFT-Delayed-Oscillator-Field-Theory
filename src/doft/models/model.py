@@ -289,7 +289,7 @@ class DOFTModel:
             lpc_deltaK_neg_frac = 0.0
 
         return {'lpc_deltaK_neg_frac': lpc_deltaK_neg_frac,
-                'lpc_brake_count': 0,
+                'lpc_vcount': 0,
                 'lpc_windows_analyzed': windows_analyzed,
                 'block_skipped': block_skipped}, blocks_df
 

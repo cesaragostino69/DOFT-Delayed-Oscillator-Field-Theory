@@ -168,7 +168,7 @@ Emits summary CSV/PNG with estimated $\bar c$ and anisotropy $\Delta c / c$.
 ## Data contracts
 
 **runs.csv** (one row per run)
-- `run_id, seed, n_nodes, d, density, beta_h, beta_c, kernel_order, dt, n_steps, mean_c_hat, std_c_hat, anisotropy, brake_count, copy_events, energy, entropy, timestamp`
+- `run_id, seed, n_nodes, d, density, beta_h, beta_c, kernel_order, dt, n_steps, mean_c_hat, std_c_hat, anisotropy, lpc_vcount, copy_events, energy, entropy, timestamp`
 
 **edges.parquet** (graph snapshot)
 - `i, j, tau_ij, K_type, K_params, weight`
@@ -330,8 +330,8 @@ Open systems balance inflow/outflow and dissipation.
 
 - Track chaos functional 𝒦 (Lyapunov density or spectral entropy) in windows.  
   - Closed: $\dot 𝒦 \to 0$ (within numerical tolerance)  
-  - Open: $\dot 𝒦 \approx \Phi_{\text{in}}-\Phi_{\text{out}}-\mathcal{D}$  
-- Correlate **brake_count** with spikes in 𝒦 to verify the copy-brake is a stabilizer, not a source.
+  - Open: $\dot 𝒦 \approx \Phi_{\text{in}}-\Phi_{\text{out}}-\mathcal{D}$
+- Correlate **lpc_vcount** with spikes in 𝒦 to verify the copy-brake is a stabilizer, not a source.
 
 ---
 
