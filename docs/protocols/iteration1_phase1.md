@@ -5,8 +5,8 @@
 **Objective:** Demonstrate that **c** is **emergent** (not imposed) and validate **LPC** (Law of Preservation of Chaos) in a **closed–passive** network.
 
 **Phase 1 Go/No-Go (all must pass):**  
-**(C-1)** Fit of \(c_{\mathrm{eff}}\) vs. \(a_{\mathrm{mean}}/\tau_{\mathrm{mean}}\): **slope = 1 ± 5%** and **intercept ~ 0** (95% CI).  
-**(C-2)** Isotropy: \(\mathrm{Var}(c)/c^2 < 10^{-2}\) and \(\Delta c/c\) (max across axes) **< 2%**.  
+**(C-1)** Fit of \$(c_{\mathrm{eff}}\) vs. \(a_{\mathrm{mean}}/\tau_{\mathrm{mean}}\)$: **slope = 1 ± 5%** and **intercept ~ 0** (95% CI).  
+**(C-2)** Isotropy: \$(\mathrm{Var}(c)/c^2 < 10^{-2}\) and \(\Delta c/c\)$ (max across axes) **< 2%**.  
 **(C-3)** LPC in closed–passive mode: **\(\Delta K \le 0\)** in **≥95%** of windows, **without** triggering the brake (lpc_vcount = 0).
 
 ---
