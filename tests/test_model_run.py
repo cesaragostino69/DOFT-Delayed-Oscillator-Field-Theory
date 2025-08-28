@@ -27,9 +27,12 @@ def create_model(seed=0, dt_nondim=0.1):
 
 def test_pulse_metrics_numeric():
     model = create_model(seed=0)
-    metrics = model._calculate_pulse_metrics(n_steps=50)
+    metrics = model._calculate_pulse_metrics(n_steps=50, noise_std=0.0)
 
     assert "ceff_pulse" in metrics
+    assert "ceff_pulse_ic95_lo" in metrics
+    assert "ceff_pulse_ic95_hi" in metrics
+    assert "ceff_iso_diag" in metrics
     assert np.isfinite(metrics["ceff_pulse"])
 
 
@@ -50,3 +53,13 @@ def test_blocks_df_contains_block_skipped():
     # All entries should be either 0 or 1
     assert set(blocks_df['block_skipped'].unique()).issubset({0, 1})
     
+
+def test_noise_floor_effect():
+    m_low = create_model(seed=0)
+    m_high = create_model(seed=0)
+    metrics_low = m_low._calculate_pulse_metrics(n_steps=50, noise_std=0.01)
+    metrics_high = m_high._calculate_pulse_metrics(n_steps=50, noise_std=0.03)
+    assert metrics_high['xi_floor'] > metrics_low['xi_floor']
+    # Effective speed should remain finite under varying noise floors
+    assert np.isfinite(metrics_low['ceff_pulse'])
+    assert np.isfinite(metrics_high['ceff_pulse'])

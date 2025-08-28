@@ -222,56 +222,127 @@ class DOFTModel:
                 self.Q_history = new_Q_history
                 self.history_steps = new_history_steps
 
-    def _calculate_pulse_metrics(self, n_steps):
-        self.Q.fill(0.0); self.P.fill(0.0); self.Q_history.fill(0.0)
+    
+    def _calculate_pulse_metrics(self, n_steps, noise_std: float = 0.0):
+        """Estimate wave-front speed using multiple noise-relative thresholds.
+
+        Parameters
+        ----------
+        n_steps:
+            Number of integration steps.
+        noise_std:
+            Standard deviation of the synthetic noise added before injecting the
+            pulse. The resulting floor :math:`\xi` sets the detection thresholds
+            ``{1σ, 3σ, 5σ}``.
+        """
+
+        # Reset fields and optional pre-pulse noise
+        self.Q.fill(0.0)
+        self.P.fill(0.0)
+        self.Q_history.fill(0.0)
+        if noise_std > 0.0:
+            self.Q += self.rng.normal(0.0, noise_std, size=self.Q.shape)
+
+        # Noise floor and thresholds relative to it
+        xi_floor = float(np.std(self.Q))
+        xi_floor = max(xi_floor, 1e-12)
+        thresholds = xi_floor * np.array([1.0, 3.0, 5.0])
+
         center = self.grid_size // 2
 
-        # Use amplitudes of Order(1) for stability
+        # Inject Gaussian pulse
         x, y = np.meshgrid(np.arange(self.grid_size), np.arange(self.grid_size))
-        self.Q = 0.1 * np.exp(-((x - center)**2 + (y - center)**2) / 10.0)
+        self.Q += 0.1 * np.exp(-((x - center) ** 2 + (y - center) ** 2) / 10.0)
 
         num_angles = 16
         thetas = np.linspace(0, 2 * np.pi, num_angles, endpoint=False)
-        front_detections = {theta: [] for theta in thetas}
 
-        high_thresh, low_thresh = 0.01, 0.007 # Reduced thresholds for smaller amplitude
-        is_triggered = {theta: False for theta in thetas}
-        max_r_so_far = {theta: 0 for theta in thetas}
+        front_detections = {
+            (theta, thr_idx): []
+            for theta in thetas
+            for thr_idx in range(len(thresholds))
+        }
+        max_r_so_far = {
+            (theta, thr_idx): 0
+            for theta in thetas
+            for thr_idx in range(len(thresholds))
+        }
 
         for t_idx in range(n_steps):
             self._step_euler(t_idx)
+            t_now = t_idx * self.dt
             for theta in thetas:
-                for r in range(max_r_so_far[theta], center):
-                    px = int(center + r * np.cos(theta)); py = int(center + r * np.sin(theta))
-                    val = self.Q[py, px]
-                    if not is_triggered[theta] and val > high_thresh: is_triggered[theta] = True
-                    elif is_triggered[theta] and val < low_thresh: is_triggered[theta] = False
-                    if is_triggered[theta] and r > max_r_so_far[theta]: max_r_so_far[theta] = r
-                if max_r_so_far[theta] > 0:
-                    # Distances and times are in physical (not dimensionless) units for KPI
-                    front_detections[theta].append((t_idx * self.dt, max_r_so_far[theta]))
+                cos_t, sin_t = np.cos(theta), np.sin(theta)
+                for thr_idx, thr in enumerate(thresholds):
+                    r_start = max_r_so_far[(theta, thr_idx)]
+                    for r in range(r_start, center):
+                        px = int(center + r * cos_t)
+                        py = int(center + r * sin_t)
+                        if self.Q[py, px] > thr:
+                            max_r_so_far[(theta, thr_idx)] = r
+                    rmax = max_r_so_far[(theta, thr_idx)]
+                    if rmax > 0:
+                        front_detections[(theta, thr_idx)].append((t_now, rmax))
 
-        c_thetas = []; c_thetas_ci_low, c_thetas_ci_high = [], []
-        for theta in thetas:
-            detections = np.array(list(dict.fromkeys(front_detections[theta])))
-            if len(detections) < 10: continue # Need more points with small dt
+        c_thetas = []
+        c_thetas_ci_low = []
+        c_thetas_ci_high = []
+        for idx, theta in enumerate(thetas):
+            detections = np.array(
+                list(dict.fromkeys(front_detections[(theta, 1)]))
+            )
+            if len(detections) < 10:
+                continue
             times, dists = detections[:, 0], detections[:, 1]
             res = theilslopes(dists, times, 0.95)
-            c_thetas.append(res[0]); c_thetas_ci_low.append(res[2]); c_thetas_ci_high.append(res[3])
+            c_thetas.append(res[0])
+            c_thetas_ci_low.append(res[2])
+            c_thetas_ci_high.append(res[3])
 
         if not c_thetas:
-            return {'ceff_pulse': 0.0, 'ceff_pulse_ic95': 0.0, 'anisotropy_max_pct': 100.0,
-                    'var_c_over_c2': 1.0, 'ceff_iso_x': 0.0, 'ceff_iso_y': 0.0, 'ceff_iso_z': 0.0}
+            return {
+                'xi_floor': xi_floor,
+                'ceff_pulse': 0.0,
+                'ceff_pulse_ic95_lo': 0.0,
+                'ceff_pulse_ic95_hi': 0.0,
+                'anisotropy_max_pct': 100.0,
+                'var_c_over_c2': 1.0,
+                'ceff_iso_x': 0.0,
+                'ceff_iso_y': 0.0,
+                'ceff_iso_z': 0.0,
+                'ceff_iso_diag': 0.0,
+            }
 
         c_thetas = np.array(c_thetas)
-        mean_c = np.mean(c_thetas)
-        var_c_over_c2 = np.var(c_thetas) / (mean_c**2) if mean_c > 0 else 1.0
-        anisotropy_max_pct = (np.max(np.abs(c_thetas - mean_c)) / mean_c) * 100 if mean_c > 0 else 100.0
-        ci_width = np.mean(c_thetas_ci_high) - np.mean(c_thetas_ci_low)
-        c_x = c_thetas[0]; c_y = c_thetas[num_angles // 4]; c_z = c_thetas[num_angles // 8]
-        return {'ceff_pulse': mean_c, 'ceff_pulse_ic95': ci_width / 2.0,
-                'anisotropy_max_pct': anisotropy_max_pct, 'var_c_over_c2': var_c_over_c2,
-                'ceff_iso_x': c_x, 'ceff_iso_y': c_y, 'ceff_iso_z': c_z}
+        mean_c = float(np.mean(c_thetas))
+        var_c_over_c2 = np.var(c_thetas) / (mean_c ** 2) if mean_c > 0 else 1.0
+        anisotropy_max_pct = (
+            np.max(np.abs(c_thetas - mean_c)) / mean_c * 100 if mean_c > 0 else 100.0
+        )
+        ci_low = float(np.mean(c_thetas_ci_low))
+        ci_high = float(np.mean(c_thetas_ci_high))
+
+        c_x = c_thetas[0] if len(c_thetas) > 0 else 0.0
+        c_y = c_thetas[num_angles // 4] if len(c_thetas) > num_angles // 4 else 0.0
+        c_z = c_thetas[num_angles // 8] if len(c_thetas) > num_angles // 8 else 0.0
+        c_diag = (
+            c_thetas[3 * num_angles // 8]
+            if len(c_thetas) > 3 * num_angles // 8
+            else 0.0
+        )
+
+        return {
+            'xi_floor': xi_floor,
+            'ceff_pulse': mean_c,
+            'ceff_pulse_ic95_lo': ci_low,
+            'ceff_pulse_ic95_hi': ci_high,
+            'anisotropy_max_pct': anisotropy_max_pct,
+            'var_c_over_c2': var_c_over_c2,
+            'ceff_iso_x': c_x,
+            'ceff_iso_y': c_y,
+            'ceff_iso_z': c_z,
+            'ceff_iso_diag': c_diag,
+        }
 
     def _calculate_lpc_metrics(self, n_steps):
         self.Q = self.rng.normal(0, 0.1, self.Q.shape); self.P.fill(0.0); self.Q_history.fill(0.0)
@@ -337,3 +408,4 @@ class DOFTModel:
         lpc_metrics, blocks_df = self._calculate_lpc_metrics(n_steps=lpc_steps)
         final_run_metrics = {**pulse_metrics, **lpc_metrics}
         return final_run_metrics, blocks_df
+    
