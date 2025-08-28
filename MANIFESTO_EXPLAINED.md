@@ -20,7 +20,7 @@ That’s DOFT in one breath: **delayed nudges + gentle noise → waves, clocks, 
 
 ⸻
 
-## 1) Ground rules (our “axioms,” but human-sized)
+## 1) Ground rules (our “axioms,” in plain language)
 
 - **A0 — Law of Preservation of Chaos (LPC).**  
   The universe carries a “chaos budget.” In a closed setup, that budget can’t blow up; in open setups, chaos can flow in/out, and some is always dissipated (lost as dull heat or smoothing). Order is what you get when chaos is channeled into recurring patterns.

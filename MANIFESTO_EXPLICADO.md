@@ -20,7 +20,7 @@ Eso es DOFT en una sola respiración: **empujones retardados + ruido suave → o
 
 ⸻
 
-## 1) Reglas básicas (nuestros “axiomas”, pero en tamaño humano)
+## 1) Reglas básicas (nuestros “axiomas”, en coloquial)
 
 - **A0 — Ley de Preservación del Caos (LPC).**  
   El universo lleva un “presupuesto de caos”. En un sistema cerrado, ese presupuesto no puede explotar; en sistemas abiertos, el caos puede entrar/salir, y siempre se disipa algo (se pierde como calor opaco o alisado). El orden es lo que obtienes cuando el caos se canaliza en patrones recurrentes.
