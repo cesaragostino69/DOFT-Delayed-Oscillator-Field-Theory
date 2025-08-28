@@ -76,9 +76,13 @@ class DOFTModel:
             np.roll(Q_delayed, 1, axis=0) + np.roll(Q_delayed, -1, axis=0) +
             np.roll(Q_delayed, 1, axis=1) + np.roll(Q_delayed, -1, axis=1) - 4 * Q_delayed
         )
-        # We use the dimensionless dt for the update step
-        P_new = self.P + self.dt_nondim * (-self.gamma_nondim * self.P - self.Q + K_term)
-        Q_new = self.Q + self.dt_nondim * self.P
+        # Semi-implicit update for P with gamma term treated implicitly
+        # P_new = (P - dt_nondim * Q + dt_nondim * K_term) / (1 + dt_nondim * gamma_nondim)
+        P_new = (
+            self.P - self.dt_nondim * self.Q + self.dt_nondim * K_term
+        ) / (1.0 + self.dt_nondim * self.gamma_nondim)
+        # Leapfrog-style update for Q using the newly updated momentum
+        Q_new = self.Q + self.dt_nondim * P_new
 
         self.P, self.Q = P_new, Q_new
         self.Q_history[t_idx % self.history_steps] = self.Q
