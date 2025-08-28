@@ -40,6 +40,8 @@ class DOFTModel:
         gamma,
         seed,
         dt_nondim: float | None = None,
+        max_pulse_steps: int | None = None,
+        max_lpc_steps: int | None = None,
     ):
         self.grid_size = grid_size
         self.seed = seed
@@ -93,6 +95,10 @@ class DOFTModel:
         self.scale_threshold = 1e6
         self.scale_accum = 1.0
         self.scale_log: list[float] = []
+
+        # Optional caps for expensive diagnostic runs
+        self.max_pulse_steps = max_pulse_steps
+        self.max_lpc_steps = max_lpc_steps
 
     def _get_delayed_q_interpolated(self, t_idx):
         """
@@ -436,7 +442,11 @@ class DOFTModel:
         # Adjust n_steps to account for the much smaller dt, simulating a similar physical duration.
         # old_dt=0.1, new_dt=0.005*tau_ref. Ratio is ~20.
         pulse_steps = int(3000 * (0.1 / self.dt))
+        if self.max_pulse_steps is not None:
+            pulse_steps = min(pulse_steps, self.max_pulse_steps)
         lpc_steps = int(30000 * (0.1 / self.dt))
+        if self.max_lpc_steps is not None:
+            lpc_steps = min(lpc_steps, self.max_lpc_steps)
 
         pulse_metrics = self._calculate_pulse_metrics(n_steps=pulse_steps)
         lpc_metrics, blocks_df = self._calculate_lpc_metrics(n_steps=lpc_steps)
