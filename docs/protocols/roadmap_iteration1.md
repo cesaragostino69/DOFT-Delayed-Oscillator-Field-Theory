@@ -272,7 +272,7 @@ Acceptance: exponent stable under rebinning and threshold change; null controls 
 
 ### 11.9 Data contract (files and columns)
 Per run (runs.csv): id, seed, date, N, topology, a_mean, a_std, tau0_mean, tau0_std, gamma_eff, xi_floor, kernel_type, M_params, ceff_map_mean, ceff_map_std, ceff_map_min, ceff_map_max, ceff_measured_x, ceff_measured_y, ceff_measured_z, ceff_measured_ic95, lorentz_window, sens_dc_da, sens_dc_dtau, lpc_ok_frac, beta_h_mean, beta_h_ci_lo, beta_h_ci_hi, fdt_err_rel, notes.
-Per block (blocks.csv): run_id, d, window_id, beta_point, beta_ci_lo, beta_ci_hi, K_metric, S_xixi_band, ReM_band.
+Per block (blocks.csv): run_id, d, window_id, beta_point, beta_ci_lo, beta_ci_hi, K_metric, S_xixi_band, ReM_band, block_skipped.
 Metadata (run_meta.json): versions, solver, units, windowing, detrending, seeds.
 
 ### 11.10 Minimum QA panel (mandatory plots)
@@ -358,7 +358,7 @@ With this, both audits are unified into a single plan, with KPIs and unambiguous
 - **Activate damping:** the term `-γ·P` must affect dynamics. Minimum test: with `γ>0` and `ξ=0`, **total energy** must **decay**.
 - **Data contract (mandatory logging):**
   - **`runs.csv`** — key columns: `run_id, seed, a_mean, tau_mean, gamma, ceff_pulse, ceff_pulse_ic95, anisotropy_max_pct, lpc_deltaK_neg_frac, lpc_vcount`.
-  - **`blocks.csv`** — chaos analysis windows: `run_id, window_id, K_metric, deltaK`.
+  - **`blocks.csv`** — chaos analysis windows: `run_id, window_id, K_metric, deltaK, block_skipped`.
   - **`run_meta.json`** — metadata: versions, analysis parameters (window size, windowing, detrending, topology, etc.).
 
 ### 13.2 “Emergent truth” — Phase 1 experiments

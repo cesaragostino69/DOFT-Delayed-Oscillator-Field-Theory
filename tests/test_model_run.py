@@ -39,4 +39,14 @@ def test_seed_reproducibility_lpc_metrics():
     r1, _ = m1._calculate_lpc_metrics(n_steps=50)
     r2, _ = m2._calculate_lpc_metrics(n_steps=50)
     assert r1 == r2
+
+
+def test_blocks_df_contains_block_skipped():
+    model = create_model(seed=0)
+    metrics, blocks_df = model._calculate_lpc_metrics(n_steps=7000)
+    assert 'block_skipped' in blocks_df.columns
+    # block_skipped metric should match the count of skipped windows
+    assert metrics['block_skipped'] == int((blocks_df['block_skipped'] == 1).sum())
+    # All entries should be either 0 or 1
+    assert set(blocks_df['block_skipped'].unique()).issubset({0, 1})
     

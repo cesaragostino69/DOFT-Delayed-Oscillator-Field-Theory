@@ -83,6 +83,8 @@ def main():
 
             if blocks_df is not None and not blocks_df.empty:
                 blocks_df['run_id'] = run_id
+                if 'block_skipped' in blocks_df.columns:
+                    blocks_df['block_skipped'] = blocks_df['block_skipped'].astype(int)
                 all_blocks_data.append(blocks_df)
 
     print(f"\n✅ Simulation sweep finished. Consolidating and writing results to {output_dir}...")

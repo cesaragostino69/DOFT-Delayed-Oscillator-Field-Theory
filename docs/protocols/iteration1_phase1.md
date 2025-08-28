@@ -95,6 +95,7 @@ The dissipative term \(-\gamma P\) **must** affect dynamics. Minimal test: with 
 | t_start, t_end | float | window time |
 | K_metric | float | block spectral entropy |
 | deltaK | float | \(K_{n}-K_{n-1}\) |
+| block_skipped | int | 1 if window skipped due to invalid data |
 | detrend | str | detrending method |
 | welch_params | str | summary (nperseg, noverlap, window) |
 

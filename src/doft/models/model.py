@@ -264,7 +264,6 @@ class DOFTModel:
         step = win_size - overlap
         if len(time_series) < win_size:
             return {'block_skipped': 0}, pd.DataFrame()
-
         block_data, last_K = [], None
         block_skipped = 0
         num_windows = (len(time_series) - win_size) // step + 1
@@ -272,18 +271,25 @@ class DOFTModel:
             window_data = time_series[i*step : i*step + win_size]
             if not np.isfinite(window_data).all():
                 block_skipped += 1
+                block_data.append({'window_id': i,
+                                    'K_metric': np.nan,
+                                    'deltaK': np.nan,
+                                    'block_skipped': 1})
                 continue
             K_metric = spectral_entropy(window_data)
             deltaK = K_metric - last_K if last_K is not None else 0.0
-            block_data.append({'window_id': i, 'K_metric': K_metric, 'deltaK': deltaK})
+            block_data.append({'window_id': i,
+                                'K_metric': K_metric,
+                                'deltaK': deltaK,
+                                'block_skipped': 0})
             last_K = K_metric
-        if not block_data:
-            return {'block_skipped': block_skipped}, pd.DataFrame()
+
         blocks_df = pd.DataFrame(block_data)
 
-        windows_analyzed = len(blocks_df)
+        valid_blocks = blocks_df[blocks_df['block_skipped'] == 0]
+        windows_analyzed = len(valid_blocks)
         if windows_analyzed > 1:
-            deltaK_neg_count = (blocks_df['deltaK'][1:] <= 0).sum()
+            deltaK_neg_count = (valid_blocks['deltaK'][1:] <= 0).sum()
             lpc_deltaK_neg_frac = deltaK_neg_count / (windows_analyzed - 1)
         else:
             lpc_deltaK_neg_frac = 0.0
