@@ -32,7 +32,7 @@ class DOFTModel:
 
         # Correctly size the history buffer with the new, smaller dt
         self.history_steps = int(math.ceil(self.tau / self.dt)) + 5 # Added safe margin
-        
+
         self.Q = np.zeros((grid_size, grid_size), dtype=np.float64)
         self.P = np.zeros((grid_size, grid_size), dtype=np.float64)
         self.Q_history = np.zeros((self.history_steps, grid_size, grid_size), dtype=np.float64)
@@ -44,30 +44,30 @@ class DOFTModel:
         instead of taking the nearest neighbor.
         """
         delay_in_steps = self.tau / self.dt
-        
+
         idx_floor = int(math.floor(delay_in_steps))
         idx_ceil = int(math.ceil(delay_in_steps))
-        
+
         if idx_floor == idx_ceil:
             # The delay is an exact multiple of dt
             history_idx = (t_idx - idx_floor) % self.history_steps
             return self.Q_history[history_idx]
-            
+
         # Get the two bracketing time steps from history
         hist_idx1 = (t_idx - idx_floor) % self.history_steps
         hist_idx2 = (t_idx - idx_ceil) % self.history_steps
         Q1 = self.Q_history[hist_idx1]
         Q2 = self.Q_history[hist_idx2]
-        
+
         # Interpolation factor (fractional part)
         frac = delay_in_steps - idx_floor
-        
+
         # Linearly interpolate between the two states
         return Q2 * frac + Q1 * (1.0 - frac)
 
     def _step_euler(self, t_idx):
         Q_delayed = self._get_delayed_q_interpolated(t_idx)
-        
+
         # The equations of motion now use dimensionless parameters
         K_term = self.a_nondim * (
             np.roll(Q_delayed, 1, axis=0) + np.roll(Q_delayed, -1, axis=0) +
@@ -76,22 +76,22 @@ class DOFTModel:
         # We use the dimensionless dt for the update step
         P_new = self.P + self.dt_nondim * (-self.gamma_nondim * self.P - self.Q + K_term)
         Q_new = self.Q + self.dt_nondim * self.P
-        
+
         self.P, self.Q = P_new, Q_new
         self.Q_history[t_idx % self.history_steps] = self.Q
 
     def _calculate_pulse_metrics(self, n_steps):
         self.Q.fill(0.0); self.P.fill(0.0); self.Q_history.fill(0.0)
         center = self.grid_size // 2
-        
+
         # Use amplitudes of Order(1) for stability
         x, y = np.meshgrid(np.arange(self.grid_size), np.arange(self.grid_size))
         self.Q = 0.1 * np.exp(-((x - center)**2 + (y - center)**2) / 10.0)
-        
+
         num_angles = 16
         thetas = np.linspace(0, 2 * np.pi, num_angles, endpoint=False)
         front_detections = {theta: [] for theta in thetas}
-        
+
         high_thresh, low_thresh = 0.01, 0.007 # Reduced thresholds for smaller amplitude
         is_triggered = {theta: False for theta in thetas}
         max_r_so_far = {theta: 0 for theta in thetas}
@@ -108,7 +108,7 @@ class DOFTModel:
                 if max_r_so_far[theta] > 0:
                     # Distances and times are in physical (not dimensionless) units for KPI
                     front_detections[theta].append((t_idx * self.dt, max_r_so_far[theta]))
-        
+
         c_thetas = []; c_thetas_ci_low, c_thetas_ci_high = [], []
         for theta in thetas:
             detections = np.array(list(dict.fromkeys(front_detections[theta])))
@@ -116,7 +116,7 @@ class DOFTModel:
             times, dists = detections[:, 0], detections[:, 1]
             res = theilslopes(dists, times, 0.95)
             c_thetas.append(res[0]); c_thetas_ci_low.append(res[2]); c_thetas_ci_high.append(res[3])
-            
+
         if not c_thetas:
             return {'ceff_pulse': 0.0, 'ceff_pulse_ic95': 0.0, 'anisotropy_max_pct': 100.0,
                     'var_c_over_c2': 1.0, 'ceff_iso_x': 0.0, 'ceff_iso_y': 0.0, 'ceff_iso_z': 0.0}
@@ -141,24 +141,32 @@ class DOFTModel:
 
         # STABILITY FIX #4: NUMERICAL GUARD
         # Check for non-finite values before spectral calculations.
+        # We no longer abort the entire metric calculation if non-finite
+        # values appear; instead, individual windows will be skipped.
         if not np.all(np.isfinite(time_series)):
-            print("  WARNING: Non-finite values detected in time series. Skipping LPC metrics.")
-            return {'lpc_deltaK_neg_frac': np.nan, 'lpc_brake_count': 0, 'lpc_windows_analyzed': 0}, pd.DataFrame()
+            print("  WARNING: Non-finite values detected in time series.")
 
         win_size, overlap = 4096, 2048 # Larger window for finer frequency resolution with small dt
         step = win_size - overlap
-        if len(time_series) < win_size: return {}, pd.DataFrame()
+        if len(time_series) < win_size:
+            return {'block_skipped': 0}, pd.DataFrame()
+
         block_data, last_K = [], None
+        block_skipped = 0
         num_windows = (len(time_series) - win_size) // step + 1
         for i in range(num_windows):
             window_data = time_series[i*step : i*step + win_size]
+            if not np.isfinite(window_data).all():
+                block_skipped += 1
+                continue
             K_metric = spectral_entropy(window_data)
             deltaK = K_metric - last_K if last_K is not None else 0.0
             block_data.append({'window_id': i, 'K_metric': K_metric, 'deltaK': deltaK})
             last_K = K_metric
-        if not block_data: return {}, pd.DataFrame()
+        if not block_data:
+            return {'block_skipped': block_skipped}, pd.DataFrame()
         blocks_df = pd.DataFrame(block_data)
-        
+
         windows_analyzed = len(blocks_df)
         if windows_analyzed > 1:
             deltaK_neg_count = (blocks_df['deltaK'][1:] <= 0).sum()
@@ -166,8 +174,10 @@ class DOFTModel:
         else:
             lpc_deltaK_neg_frac = 0.0
 
-        return {'lpc_deltaK_neg_frac': lpc_deltaK_neg_frac, 'lpc_brake_count': 0,
-                'lpc_windows_analyzed': windows_analyzed}, blocks_df
+        return {'lpc_deltaK_neg_frac': lpc_deltaK_neg_frac,
+                'lpc_brake_count': 0,
+                'lpc_windows_analyzed': windows_analyzed,
+                'block_skipped': block_skipped}, blocks_df
 
     def run(self):
         # Adjust n_steps to account for the much smaller dt, simulating a similar physical duration.
