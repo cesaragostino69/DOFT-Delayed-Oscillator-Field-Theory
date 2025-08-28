@@ -16,6 +16,12 @@ def main():
     This version incorporates numerical stability fixes based on audit feedback.
     """
     parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
+    parser.add_argument(
+        "--boundary",
+        choices=["periodic", "reflective", "absorbing"],
+        default="periodic",
+        help="Boundary condition for lattice interactions",
+    )
     args = parser.parse_args()
 
     # --- Sweep Configuration ---
@@ -71,6 +77,7 @@ def main():
                 tau_ref=tau_ref,
                 gamma=gamma,
                 seed=seed,
+                boundary_mode=args.boundary,
             )
 
             run_metrics, blocks_df = model.run()

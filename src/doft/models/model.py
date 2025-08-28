@@ -39,6 +39,7 @@ class DOFTModel:
         tau_ref,
         gamma,
         seed,
+        boundary_mode: str = "periodic",
         dt_nondim: float | None = None,
         max_pulse_steps: int | None = None,
         max_lpc_steps: int | None = None,
@@ -46,6 +47,8 @@ class DOFTModel:
         self.grid_size = grid_size
         self.seed = seed
         self.rng = np.random.default_rng(self.seed)
+
+        self.boundary_mode = boundary_mode
 
         # STABILITY FIX #1: NONDIMENSIONALIZATION
         # Use reference scales to make all simulation variables of order ~1.
@@ -128,6 +131,44 @@ class DOFTModel:
         # Linearly interpolate between the two states
         return Q2 * frac + Q1 * (1.0 - frac)
 
+    def _laplacian(self, field: np.ndarray, mode: str | None = None) -> np.ndarray:
+        """Return discrete Laplacian of ``field`` with boundary ``mode``.
+
+        Parameters
+        ----------
+        field:
+            Array to operate on.
+        mode:
+            Boundary condition mode. If ``None`` uses ``self.boundary_mode``.
+            Supported values are ``"periodic"``, ``"reflective"`` and
+            ``"absorbing"``.
+        """
+
+        mode = mode or self.boundary_mode
+
+        if mode == "periodic":
+            return (
+                np.roll(field, 1, axis=0)
+                + np.roll(field, -1, axis=0)
+                + np.roll(field, 1, axis=1)
+                + np.roll(field, -1, axis=1)
+                - 4 * field
+            )
+        if mode == "reflective":
+            padded = np.pad(field, 1, mode="edge")
+        elif mode == "absorbing":
+            padded = np.pad(field, 1, mode="constant", constant_values=0)
+        else:
+            raise ValueError(f"unknown boundary mode: {mode}")
+
+        return (
+            padded[:-2, 1:-1]
+            + padded[2:, 1:-1]
+            + padded[1:-1, :-2]
+            + padded[1:-1, 2:]
+            - 4 * field
+        )
+
     def _step_euler(self, t_idx):
         Q_prev = self.Q.copy()
         P_prev = self.P.copy()
@@ -137,10 +178,7 @@ class DOFTModel:
             Q_delayed = self._get_delayed_q_interpolated(t_idx)
 
             # The equations of motion now use dimensionless parameters
-            K_term = self.a_nondim * (
-                np.roll(Q_delayed, 1, axis=0) + np.roll(Q_delayed, -1, axis=0) +
-                np.roll(Q_delayed, 1, axis=1) + np.roll(Q_delayed, -1, axis=1) - 4 * Q_delayed
-            )
+            K_term = self.a_nondim * self._laplacian(Q_delayed)
             # Semi-implicit update for P with gamma term treated implicitly
             # P_new = (P - dt_nondim * Q + dt_nondim * K_term) / (1 + dt_nondim * gamma_nondim)
             P_new = (
