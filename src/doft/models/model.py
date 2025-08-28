@@ -89,6 +89,11 @@ class DOFTModel:
         self.energy_log: list[float] = []
         self.last_energy = compute_energy(self.Q, self.P)
 
+        # Track scaling applied to the fields to avoid overflow
+        self.scale_threshold = 1e6
+        self.scale_accum = 1.0
+        self.scale_log: list[float] = []
+
     def _get_delayed_q_interpolated(self, t_idx):
         """
         STABILITY FIX #3: LINEAR INTERPOLATION FOR DELAYS
@@ -138,6 +143,15 @@ class DOFTModel:
             # Leapfrog-style update for Q using the newly updated momentum
             Q_new = self.Q + self.dt_nondim * P_new
 
+            # Compute norms and rescale if necessary to avoid overflow
+            norm_Q = np.linalg.norm(Q_new)
+            norm_P = np.linalg.norm(P_new)
+            scale = max(norm_Q, norm_P)
+            if scale > self.scale_threshold:
+                Q_new /= scale
+                P_new /= scale
+                self.scale_accum *= scale
+
             energy_new = compute_energy(Q_new, P_new)
 
             if (
@@ -149,6 +163,7 @@ class DOFTModel:
                 self.Q_history[t_idx % self.history_steps] = self.Q
                 self.last_energy = energy_new
                 self.energy_log.append(energy_new)
+                self.scale_log.append(self.scale_accum)
                 break
 
             if not (np.isfinite(P_new).all() and np.isfinite(Q_new).all()):
