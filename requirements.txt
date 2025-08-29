@@ -5,3 +5,4 @@ matplotlib>=3.7
 scipy>=1.10
 tqdm>=4.66
 typing_extensions>=4.8
+psutil>=5.9

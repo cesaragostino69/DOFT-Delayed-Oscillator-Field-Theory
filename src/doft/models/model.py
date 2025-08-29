@@ -7,7 +7,7 @@ from scipy.stats import theilslopes
 
 from doft.utils.utils import spectral_entropy
 
-MAX_RAM_BYTES = 32 * 1024 ** 3
+DEFAULT_MAX_RAM_BYTES = 32 * 1024 ** 3
 
 
 def compute_energy(Q: np.ndarray, P: np.ndarray) -> float:
@@ -78,6 +78,7 @@ class DOFTModel:
         energy_mode: str = "auto",
         log_steps: bool = False,
         log_path: str | None = None,
+        max_ram_bytes: int | None = None,
     ) -> None:
         self.grid_size = grid_size
         self.seed = seed
@@ -117,12 +118,21 @@ class DOFTModel:
             self.y_states = None
             self.y_thetas = None
 
+        self.max_ram_bytes = max_ram_bytes or DEFAULT_MAX_RAM_BYTES
+
         bytes_per_slice = grid_size * grid_size * np.dtype(np.float64).itemsize
         memory_used = 2 * bytes_per_slice
         if self.y_states is not None:
             memory_used += self.y_states.shape[0] * bytes_per_slice
-        if memory_used > MAX_RAM_BYTES:
-            raise MemoryError("Requested configuration exceeds available 32 GB of RAM")
+        if memory_used > self.max_ram_bytes:
+            raise MemoryError(
+                f"Requested configuration needs {memory_used / 1024 ** 3:.2f} GB, exceeds limit {self.max_ram_bytes / 1024 ** 3:.2f} GB"
+            )
+        if memory_used > 0.8 * self.max_ram_bytes:
+            warnings.warn(
+                f"Estimated memory usage {memory_used / 1024 ** 3:.2f} GB approaching limit {self.max_ram_bytes / 1024 ** 3:.2f} GB",
+                ResourceWarning,
+            )
 
         # Select energy functional
         if energy_mode == "basic":

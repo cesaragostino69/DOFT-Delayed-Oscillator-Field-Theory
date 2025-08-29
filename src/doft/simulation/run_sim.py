@@ -9,8 +9,13 @@ import os
 from pathlib import Path
 import subprocess
 import multiprocessing as mp
+try:
+    import psutil  # type: ignore
+except Exception:  # pragma: no cover - fallback if psutil not installed
+    psutil = None
+    import resource
 
-from doft.models.model import DOFTModel
+from doft.models.model import DOFTModel, DEFAULT_MAX_RAM_BYTES
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -58,20 +63,40 @@ def run_single_sim(a_val, tau_val, seed):
     run_id = f"run_{int(time.time())}_{run_idx}"
     print(f"[{run_idx}/{_TOTAL}] Running sim: a={a_val}, τ={tau_val}, seed={seed}")
 
-    model = DOFTModel(
-        grid_size=_CONFIG['grid_size'],
-        a=a_val,
-        tau=tau_val,
-        a_ref=_CONFIG['a_ref'],
-        tau_ref=_CONFIG['tau_ref'],
-        gamma=_CONFIG['gamma'],
-        seed=seed,
-        boundary_mode=_CONFIG['boundary_mode'],
-        log_steps=_CONFIG['log_steps'],
-        log_path=_CONFIG['log_path'],
-    )
+    try:
+        model = DOFTModel(
+            grid_size=_CONFIG['grid_size'],
+            a=a_val,
+            tau=tau_val,
+            a_ref=_CONFIG['a_ref'],
+            tau_ref=_CONFIG['tau_ref'],
+            gamma=_CONFIG['gamma'],
+            seed=seed,
+            boundary_mode=_CONFIG['boundary_mode'],
+            log_steps=_CONFIG['log_steps'],
+            log_path=_CONFIG['log_path'],
+            max_ram_bytes=_CONFIG.get('mem_limit_bytes'),
+        )
+        run_metrics, blocks_df = model.run()
+    except MemoryError as e:
+        msg = f"MemoryError in {run_id}: {e}"
+        logger.error(msg)
+        print(msg)
+        return
 
-    run_metrics, blocks_df = model.run()
+    if psutil is not None:
+        mem_usage = psutil.Process(os.getpid()).memory_info().rss
+    else:  # pragma: no cover - platform dependent fallback
+        mem_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+    logger.info("run_id=%s memory_mb=%.2f", run_id, mem_usage / (1024 ** 2))
+    limit = _CONFIG.get('mem_limit_bytes')
+    if limit and mem_usage > 0.9 * limit:
+        logger.warning(
+            "run_id=%s memory usage %.2f MB approaching limit %.2f MB",
+            run_id,
+            mem_usage / (1024 ** 2),
+            limit / (1024 ** 2),
+        )
     logger.info(
         "run_id=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
         "C-2: var_c_over_c2=%s anisotropy_max_pct=%s "
@@ -127,6 +152,12 @@ def main():
         "--parallel",
         action="store_true",
         help="Run simulations in parallel using multiprocessing",
+    )
+    parser.add_argument(
+        "--mem-limit",
+        type=float,
+        default=None,
+        help="Soft memory limit in GB; warnings emitted when 90% is reached",
     )
     args = parser.parse_args()
 
@@ -185,6 +216,12 @@ def main():
 
     total_sims = len(simulation_points) * len(seeds)
 
+    mem_limit_bytes = (
+        int(args.mem_limit * 1024 ** 3)
+        if args.mem_limit is not None
+        else DEFAULT_MAX_RAM_BYTES
+    )
+
     config = {
         'gamma': gamma,
         'grid_size': grid_size,
@@ -194,6 +231,7 @@ def main():
         'a_ref': a_ref,
         'tau_ref': tau_ref,
         'point_to_group': point_to_group,
+        'mem_limit_bytes': mem_limit_bytes,
     }
 
     counter = mp.Value('i', 0)
