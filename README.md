@@ -176,8 +176,14 @@ Environment variables:
 - `PAR` – number of parallel shards (default: 4)
 - `SEED_OFFSET_BASE` – base seed offset (default: 0)
 - `SEED_OFFSET` – per‑shard offset set by the wrappers
-- `DOFT_CONFIG` – JSON string or path with simulation parameters. `run_quick.sh`
-  defaults to `configs/config_chaos.json`.
+- `DOFT_CONFIG` – JSON string or path with simulation parameters passed directly
+  into `DOFTModel`.  `run_quick.sh` defaults to `configs/config_chaos.json`.
+  You can override any model option, for example:
+
+  ```bash
+  export DOFT_CONFIG='{"simulation_points": [[1.0, 1.0]], "seeds": [0], "gamma": 0.1, "grid_size": 4, "a_ref": 1.0, "tau_ref": 1.0, "dt_nondim": 0.01}'
+  bash scripts/run_quick.sh
+  ```
 
 Each run writes results to a timestamped directory under `runs/`.
 

@@ -67,8 +67,11 @@ USE_GPU=1 bash scripts/run_phase1.sh
 
 The script will verify if a GPU is available. If not, it will notify you and proceed with the execution on the CPU.
 
-*For a quick chaos LPC test use `bash scripts/run_quick.sh`, which reads its
-configuration from `configs/config_chaos.json` via the `DOFT_CONFIG` variable.*
+*For a quick chaos LPC test use `bash scripts/run_quick.sh`. The script sets
+the `DOFT_CONFIG` variable to a JSON file (`configs/config_chaos.json` by
+default).  Any fields in that JSON are forwarded to `DOFTModel`, so you can
+override parameters such as `gamma`, `grid_size`, or `dt_nondim` by editing the
+file or exporting a different `DOFT_CONFIG` before invoking the script.*
 
 3.4. Parallel Execution
 

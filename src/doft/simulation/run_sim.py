@@ -73,6 +73,11 @@ def run_single_sim(a_val, tau_val, seed):
             gamma=_CONFIG['gamma'],
             seed=seed,
             boundary_mode=_CONFIG['boundary_mode'],
+            dt_nondim=_CONFIG.get('dt_nondim'),
+            max_pulse_steps=_CONFIG.get('max_pulse_steps'),
+            max_lpc_steps=_CONFIG.get('max_lpc_steps'),
+            kernel_params=_CONFIG.get('kernel_params'),
+            energy_mode=_CONFIG.get('energy_mode', 'auto'),
             log_steps=_CONFIG['log_steps'],
             log_path=_CONFIG['log_path'],
             max_ram_bytes=_CONFIG.get('mem_limit_bytes'),
@@ -198,6 +203,11 @@ def main():
     boundary_mode = cfg.get("boundary_mode", args.boundary)
     log_steps = cfg.get("log_steps", args.log_steps)
     log_path = cfg.get("log_path", args.log_path)
+    dt_nondim = cfg.get("dt_nondim")
+    max_pulse_steps = cfg.get("max_pulse_steps")
+    max_lpc_steps = cfg.get("max_lpc_steps")
+    kernel_params = cfg.get("kernel_params")
+    energy_mode = cfg.get("energy_mode", "auto")
 
     # --- Create Unique Output Directory ---
     base_run_dir = 'runs'
@@ -232,6 +242,11 @@ def main():
         'tau_ref': tau_ref,
         'point_to_group': point_to_group,
         'mem_limit_bytes': mem_limit_bytes,
+        'dt_nondim': dt_nondim,
+        'max_pulse_steps': max_pulse_steps,
+        'max_lpc_steps': max_lpc_steps,
+        'kernel_params': kernel_params,
+        'energy_mode': energy_mode,
     }
 
     counter = mp.Value('i', 0)
