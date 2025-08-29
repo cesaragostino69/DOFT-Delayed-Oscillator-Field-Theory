@@ -8,11 +8,80 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import multiprocessing as mp
 
 from doft.models.model import DOFTModel
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
+
+# Globals for worker processes
+_CONFIG = {}
+_RESULTS = None
+_COUNTER = None
+_TOTAL = 0
+
+
+def init_worker(config, results_list, counter, total):
+    """Initializer for worker processes to set shared state."""
+    global _CONFIG, _RESULTS, _COUNTER, _TOTAL
+    _CONFIG = config
+    _RESULTS = results_list
+    _COUNTER = counter
+    _TOTAL = total
+
+
+def run_single_sim(a_val, tau_val, seed):
+    """Run a single simulation and append results to the shared list."""
+    with _COUNTER.get_lock():
+        _COUNTER.value += 1
+        run_idx = _COUNTER.value
+
+    run_id = f"run_{int(time.time())}_{run_idx}"
+    print(f"[{run_idx}/{_TOTAL}] Running sim: a={a_val}, τ={tau_val}, seed={seed}")
+
+    model = DOFTModel(
+        grid_size=_CONFIG['grid_size'],
+        a=a_val,
+        tau=tau_val,
+        a_ref=_CONFIG['a_ref'],
+        tau_ref=_CONFIG['tau_ref'],
+        gamma=_CONFIG['gamma'],
+        seed=seed,
+        boundary_mode=_CONFIG['boundary_mode'],
+        log_steps=_CONFIG['log_steps'],
+        log_path=_CONFIG['log_path'],
+    )
+
+    run_metrics, blocks_df = model.run()
+    logger.info(
+        "run_id=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
+        "C-2: var_c_over_c2=%s anisotropy_max_pct=%s "
+        "C-3: lpc_ok_frac=%s lpc_vcount=%s",
+        run_id,
+        run_metrics.get('ceff_pulse'),
+        run_metrics.get('ceff_pulse_ic95_lo'),
+        run_metrics.get('ceff_pulse_ic95_hi'),
+        run_metrics.get('var_c_over_c2'),
+        run_metrics.get('anisotropy_max_pct'),
+        run_metrics.get('lpc_ok_frac'),
+        run_metrics.get('lpc_vcount'),
+    )
+
+    run_metrics['run_id'] = run_id
+    run_metrics['seed'] = seed
+    run_metrics['a_mean'] = a_val
+    run_metrics['tau_mean'] = tau_val
+    run_metrics['gamma'] = _CONFIG['gamma']
+    run_metrics['param_group'] = _CONFIG['point_to_group'].get((a_val, tau_val), 'unknown')
+    run_metrics['lorentz_window'] = 'NA'
+
+    if blocks_df is not None and not blocks_df.empty:
+        blocks_df['run_id'] = run_id
+        if 'block_skipped' in blocks_df.columns:
+            blocks_df['block_skipped'] = blocks_df['block_skipped'].astype(int)
+
+    _RESULTS.append((run_metrics, blocks_df))
 
 def main():
     """
@@ -35,6 +104,11 @@ def main():
         "--log-path",
         default=None,
         help="Prefix path for step log output files",
+    )
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run simulations in parallel using multiprocessing",
     )
     args = parser.parse_args()
 
@@ -73,58 +147,39 @@ def main():
 
     print(f"🚀 Starting DOFT Phase-1 Simulation Sweep across {len(simulation_points)} points...")
 
-    run_counter = 0
     total_sims = len(simulation_points) * len(seeds)
 
-    for (a_val, tau_val) in simulation_points:
-        for seed in seeds:
-            run_counter += 1
-            run_id = f"run_{int(time.time())}_{run_counter}"
-            print(f"[{run_counter}/{total_sims}] Running sim: a={a_val}, τ={tau_val}, seed={seed}")
+    config = {
+        'gamma': gamma,
+        'grid_size': grid_size,
+        'boundary_mode': args.boundary,
+        'log_steps': args.log_steps,
+        'log_path': args.log_path,
+        'a_ref': a_ref,
+        'tau_ref': tau_ref,
+        'point_to_group': point_to_group,
+    }
 
-            # STABILITY FIX: Pass reference scales to the model for stabilization.
-            model = DOFTModel(
-                grid_size=grid_size,
-                a=a_val,
-                tau=tau_val,
-                a_ref=a_ref,
-                tau_ref=tau_ref,
-                gamma=gamma,
-                seed=seed,
-                boundary_mode=args.boundary,
-                log_steps=args.log_steps,
-                log_path=args.log_path,
-            )
+    counter = mp.Value('i', 0)
+    combos = [(a, t, s) for (a, t) in simulation_points for s in seeds]
 
-            run_metrics, blocks_df = model.run()
-            logger.info(
-                "run_id=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
-                "C-2: var_c_over_c2=%s anisotropy_max_pct=%s "
-                "C-3: lpc_ok_frac=%s lpc_vcount=%s",
-                run_id,
-                run_metrics.get('ceff_pulse'),
-                run_metrics.get('ceff_pulse_ic95_lo'),
-                run_metrics.get('ceff_pulse_ic95_hi'),
-                run_metrics.get('var_c_over_c2'),
-                run_metrics.get('anisotropy_max_pct'),
-                run_metrics.get('lpc_ok_frac'),
-                run_metrics.get('lpc_vcount'),
-            )
+    if args.parallel:
+        with mp.Manager() as manager:
+            results_list = manager.list()
+            with mp.Pool(initializer=init_worker, initargs=(config, results_list, counter, total_sims)) as pool:
+                pool.starmap(run_single_sim, combos)
+            results = list(results_list)
+    else:
+        results = []
+        init_worker(config, results, counter, total_sims)
+        for args_tuple in combos:
+            run_single_sim(*args_tuple)
+        results = list(results)
 
-            run_metrics['run_id'] = run_id
-            run_metrics['seed'] = seed
-            run_metrics['a_mean'] = a_val
-            run_metrics['tau_mean'] = tau_val
-            run_metrics['gamma'] = gamma
-            run_metrics['param_group'] = point_to_group.get((a_val, tau_val), 'unknown')
-            run_metrics['lorentz_window'] = 'NA'
-            all_runs_data.append(run_metrics)
-
-            if blocks_df is not None and not blocks_df.empty:
-                blocks_df['run_id'] = run_id
-                if 'block_skipped' in blocks_df.columns:
-                    blocks_df['block_skipped'] = blocks_df['block_skipped'].astype(int)
-                all_blocks_data.append(blocks_df)
+    for run_metrics, blocks_df in results:
+        all_runs_data.append(run_metrics)
+        if blocks_df is not None and not blocks_df.empty:
+            all_blocks_data.append(blocks_df)
 
     print(f"\n✅ Simulation sweep finished. Consolidating and writing results to {output_dir}...")
 
@@ -144,7 +199,7 @@ def main():
     meta_data = {
         'run_directory': f'phase1_run_{timestamp}',
         'timestamp_utc': time.asctime(time.gmtime()),
-        'total_runs_in_sweep': run_counter,
+        'total_runs_in_sweep': total_sims,
         'simulation_points': simulation_points,
         'seeds_used': seeds,
         'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
