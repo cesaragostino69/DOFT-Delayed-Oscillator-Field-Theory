@@ -69,6 +69,18 @@ The script will verify if a GPU is available. If not, it will notify you and pro
 
 *For a quick chaos LPC test use `bash scripts/run_quick.sh`, which loads `configs/config_chaos.json`.*
 
+3.4. Logging Step Diagnostics
+
+To record per-integration-step diagnostics (energy terms and LPC metrics), pass
+the `--log-steps` flag to `run_sim.py`.  Optionally, specify `--log-path` to
+control the output file prefix:
+
+```
+python -m doft.simulation.run_sim --log-steps --log-path my_step_log
+```
+
+This creates `my_step_log.csv` and `my_step_log.json` with detailed step data.
+
 Step 4: Results
 
 Upon completion, the script will create a new directory inside the runs folder. The directory name will include the date and time of the run, for example: runs/phase1_run_20250825_183000.

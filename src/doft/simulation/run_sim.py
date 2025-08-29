@@ -26,6 +26,16 @@ def main():
         default="periodic",
         help="Boundary condition for lattice interactions",
     )
+    parser.add_argument(
+        "--log-steps",
+        action="store_true",
+        help="Persist per-step diagnostic metrics",
+    )
+    parser.add_argument(
+        "--log-path",
+        default=None,
+        help="Prefix path for step log output files",
+    )
     args = parser.parse_args()
 
     # --- Sweep Configuration ---
@@ -82,6 +92,8 @@ def main():
                 gamma=gamma,
                 seed=seed,
                 boundary_mode=args.boundary,
+                log_steps=args.log_steps,
+                log_path=args.log_path,
             )
 
             run_metrics, blocks_df = model.run()
