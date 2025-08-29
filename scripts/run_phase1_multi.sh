@@ -8,7 +8,7 @@ echo "# using config: $DOFT_CONFIG"
 
 for i in $(seq 0 $((PAR-1))); do
   echo ">> shard $i  (SEED_OFFSET=$((i*1000)))"
-fi
+done
 
 export SEED_OFFSET_BASE=0  # read internally by run_sim
 
@@ -18,11 +18,12 @@ for i in $(seq 0 $((PAR-1))); do
   export SEED_OFFSET=$((i*1000))
   bash scripts/run_phase1.sh &
   pids+=($!)
-fi
+done
 
 # wait for them to finish
 fail=0
 for pid in "${pids[@]}"; do
   wait "$pid" || fail=1
-fi
+done
 exit $fail
+
