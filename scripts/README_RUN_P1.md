@@ -69,7 +69,30 @@ The script will verify if a GPU is available. If not, it will notify you and pro
 
 *For a quick chaos LPC test use `bash scripts/run_quick.sh`, which loads `configs/config_chaos.json`.*
 
-3.4. Logging Step Diagnostics
+3.4. Parallel Execution
+
+To launch multiple simulations in parallel use the `*_multi.sh` wrappers:
+
+- `scripts/run_phase1_multi.sh`
+- `scripts/run_quick_multi.sh`
+
+These are plain **Bash scripts** that shard the work across processes. There is
+no accompanying `*_multi.py`; `run_phase1.sh` and `run_quick.sh` are invoked
+repeatedly in the background.
+
+Relevant environment variables:
+
+- `PAR` – number of shards to run simultaneously (default: 4).
+- `SEED_OFFSET_BASE` – base seed offset passed to the simulator (default: 0).
+- `SEED_OFFSET` – per‑shard offset automatically set by the wrapper.
+
+Example: run eight Phase 1 shards in parallel
+
+```bash
+PAR=8 bash scripts/run_phase1_multi.sh
+```
+
+3.5. Logging Step Diagnostics
 
 To record per-integration-step diagnostics (energy terms and LPC metrics), pass
 the `--log-steps` flag to `run_sim.py`.  Optionally, specify `--log-path` to
