@@ -149,11 +149,33 @@ The helper scripts read parameters from JSON files under `configs/`.
   bash scripts/run_phase1.sh   # uses configs/config_phase1.json
   ```
 
+- **Parallel Phase 1 sweep**
+
+  ```bash
+  PAR=8 bash scripts/run_phase1_multi.sh
+  ```
+
 - **Chaos LPC test**
 
   ```bash
   bash scripts/run_quick.sh    # uses configs/config_chaos.json
   ```
+
+- **Parallel chaos test**
+
+  ```bash
+  PAR=8 bash scripts/run_quick_multi.sh
+  ```
+
+`run_phase1_multi.sh` and `run_quick_multi.sh` are Bash wrappers that spawn
+multiple shards in parallel. There is no `*_multi.py`; the wrappers call
+`run_phase1.sh` or `run_quick.sh` repeatedly with different seeds.
+
+Environment variables:
+
+- `PAR` – number of parallel shards (default: 4)
+- `SEED_OFFSET_BASE` – base seed offset (default: 0)
+- `SEED_OFFSET` – per‑shard offset set by the wrappers
 
 Each run writes results to a timestamped directory under `runs/`.
 
