@@ -29,14 +29,14 @@ def compute_energy(Q: np.ndarray, P: np.ndarray) -> float:
     return float(kinetic + potential)
 
 
-def compute_total_energy(
+def compute_energy_terms(
     Q: np.ndarray,
     P: np.ndarray,
     K: float,
     y_states: np.ndarray | None = None,
     kernel_params: dict | None = None,
-) -> float:
-    """Return lattice energy including coupling and memory contributions.
+) -> dict:
+    """Return individual energy contributions of the lattice.
 
     Parameters
     ----------
@@ -51,11 +51,11 @@ def compute_total_energy(
         Parameters of the Prony chain. Only the ``"weights"`` array is
         consulted; if absent or empty the memory contribution is skipped.
 
-    Notes
-    -----
-    The returned energy is the sum of the kinetic and potential energy, a
-    nearest-neighbour coupling term ``K (\nabla Q)^2`` assuming periodic
-    boundaries, and the quadratic energy stored in the memory states.
+    Returns
+    -------
+    dict
+        Dictionary with ``kinetic``, ``potential``, ``coupling``, ``memory`` and
+        ``total`` contributions.
     """
 
     kinetic = 0.5 * np.sum(P**2)
@@ -73,7 +73,26 @@ def compute_total_energy(
         if weights.size and y_states.shape[0] == weights.size:
             memory = 0.5 * np.sum(weights[:, None, None] * y_states**2)
 
-    return float(kinetic + potential + coupling + memory)
+    total = kinetic + potential + coupling + memory
+    return {
+        "kinetic": float(kinetic),
+        "potential": float(potential),
+        "coupling": float(coupling),
+        "memory": float(memory),
+        "total": float(total),
+    }
+
+
+def compute_total_energy(
+    Q: np.ndarray,
+    P: np.ndarray,
+    K: float,
+    y_states: np.ndarray | None = None,
+    kernel_params: dict | None = None,
+) -> float:
+    """Return lattice energy including coupling and memory contributions."""
+
+    return compute_energy_terms(Q, P, K, y_states, kernel_params)["total"]
 
 
 class DOFTModel:
@@ -92,6 +111,8 @@ class DOFTModel:
         max_lpc_steps: int | None = None,
         kernel_params: dict | None = None,
         energy_mode: str = "auto",
+        log_steps: bool = False,
+        log_path: str | None = None,
     ):
         self.grid_size = grid_size
         self.seed = seed
@@ -171,6 +192,15 @@ class DOFTModel:
         # Optional caps for expensive diagnostic runs
         self.max_pulse_steps = max_pulse_steps
         self.max_lpc_steps = max_lpc_steps
+
+        # Optional step-by-step logging
+        self.log_steps = log_steps
+        self.log_path = log_path or "step_log"
+        self.step_log: list[dict] = []
+        self._last_K_metric: float | None = None
+        self._K_mean = 0.0
+        self._K_m2 = 0.0
+        self._K_count = 0
 
     def _get_delayed_q_interpolated(self, t_idx):
         """
@@ -282,6 +312,8 @@ class DOFTModel:
                 self.last_energy = energy_new
                 self.energy_log.append(energy_new_phys)
                 self.scale_log.append(self.scale_accum)
+                if self.log_steps:
+                    self._log_step(t_idx)
                 break
 
             if not (np.isfinite(P_new).all() and np.isfinite(Q_new).all()):
@@ -340,6 +372,53 @@ class DOFTModel:
                 self.Q_history = new_Q_history
                 self.history_steps = new_history_steps
 
+
+    def _log_step(self, t_idx: int):
+        """Store per-step energy and LPC metrics if logging is enabled."""
+
+        terms = compute_energy_terms(
+            self.Q,
+            self.P,
+            self.a_nondim,
+            self.y_states,
+            self.kernel_params,
+        )
+        K_metric = spectral_entropy(self.Q.flatten())
+        if self._last_K_metric is None:
+            deltaK = 0.0
+        else:
+            deltaK = K_metric - self._last_K_metric
+        self._last_K_metric = K_metric
+
+        self._K_count += 1
+        delta = K_metric - self._K_mean
+        self._K_mean += delta / self._K_count
+        self._K_m2 += delta * (K_metric - self._K_mean)
+        K_var = self._K_m2 / (self._K_count - 1) if self._K_count > 1 else 0.0
+
+        self.step_log.append(
+            {
+                "step": t_idx,
+                "kinetic": terms["kinetic"],
+                "potential": terms["potential"],
+                "coupling": terms["coupling"],
+                "memory": terms["memory"],
+                "K_metric": K_metric,
+                "lpc_slope": deltaK,
+                "lpc_var": K_var,
+            }
+        )
+
+    def save_step_log(self):
+        """Persist step logs to CSV and JSON files."""
+
+        if not self.log_steps or not self.step_log:
+            return
+        df = pd.DataFrame(self.step_log)
+        csv_path = f"{self.log_path}.csv"
+        json_path = f"{self.log_path}.json"
+        df.to_csv(csv_path, index=False)
+        df.to_json(json_path, orient="records")
     
     def _calculate_pulse_metrics(self, n_steps, noise_std: float = 0.0):
         r"""Estimate wave-front speed using multiple noise-relative thresholds.
@@ -558,5 +637,7 @@ class DOFTModel:
         pulse_metrics = self._calculate_pulse_metrics(n_steps=pulse_steps)
         lpc_metrics, blocks_df = self._calculate_lpc_metrics(n_steps=lpc_steps)
         final_run_metrics = {**pulse_metrics, **lpc_metrics}
+        if self.log_steps:
+            self.save_step_log()
         return final_run_metrics, blocks_df
     
