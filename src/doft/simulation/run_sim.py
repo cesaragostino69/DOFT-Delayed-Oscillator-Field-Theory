@@ -22,6 +22,24 @@ _COUNTER = None
 _TOTAL = 0
 
 
+def _load_env_config():
+    """Load simulation configuration from the ``DOFT_CONFIG`` environment variable.
+
+    The variable may contain either a JSON string or a path to a JSON file.
+    Returns an empty dict if the variable is unset.
+    """
+    cfg_raw = os.environ.get("DOFT_CONFIG")
+    if not cfg_raw:
+        return {}
+    try:
+        if os.path.exists(cfg_raw):
+            with open(cfg_raw, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return json.loads(cfg_raw)
+    except Exception as exc:  # pragma: no cover - defensive
+        raise RuntimeError(f"Invalid DOFT_CONFIG: {exc}")
+
+
 def init_worker(config, results_list, counter, total):
     """Initializer for worker processes to set shared state."""
     global _CONFIG, _RESULTS, _COUNTER, _TOTAL
@@ -112,25 +130,43 @@ def main():
     )
     args = parser.parse_args()
 
-    # --- Sweep Configuration ---
-    group1 = [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)]
-    group2 = [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)]
-    group3 = [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)]
-    simulation_points = group1 + group2 + group3
+    env_cfg = _load_env_config()
+    default_cfg = {
+        "gamma": 0.05,
+        "grid_size": 100,
+        "a_ref": 1.0,
+        "tau_ref": 1.0,
+        "groups": {
+            "g1": [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)],
+            "g2": [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)],
+            "g3": [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)],
+        },
+        "seeds": [42, 123, 456, 789, 1011],
+    }
+    cfg = {**default_cfg, **env_cfg}
 
+    # Determine simulation points and grouping
     point_to_group = {}
-    for pt in group1: point_to_group[pt] = 'g1'
-    for pt in group2: point_to_group[pt] = 'g2'
-    for pt in group3: point_to_group[pt] = 'g3'
+    if "groups" in cfg:
+        simulation_points = []
+        for gname, pts in cfg["groups"].items():
+            for pt in pts:
+                pt_tuple = tuple(pt)
+                simulation_points.append(pt_tuple)
+                point_to_group[pt_tuple] = gname
+    else:
+        simulation_points = [tuple(pt) for pt in cfg.get("simulation_points", [])]
+        point_to_group = {}
 
-    seeds = [42, 123, 456, 789, 1011]
-    gamma = 0.05
-    grid_size = 100
+    seeds = cfg.get("seeds", [])
+    gamma = cfg.get("gamma", 0.05)
+    grid_size = cfg.get("grid_size", 100)
+    a_ref = cfg.get("a_ref", 1.0)
+    tau_ref = cfg.get("tau_ref", 1.0)
 
-    # STABILITY FIX: Define reference parameters for nondimensionalization.
-    # We use the central point of the sweep as the reference scale.
-    a_ref = 1.0
-    tau_ref = 1.0
+    boundary_mode = cfg.get("boundary_mode", args.boundary)
+    log_steps = cfg.get("log_steps", args.log_steps)
+    log_path = cfg.get("log_path", args.log_path)
 
     # --- Create Unique Output Directory ---
     base_run_dir = 'runs'
@@ -152,9 +188,9 @@ def main():
     config = {
         'gamma': gamma,
         'grid_size': grid_size,
-        'boundary_mode': args.boundary,
-        'log_steps': args.log_steps,
-        'log_path': args.log_path,
+        'boundary_mode': boundary_mode,
+        'log_steps': log_steps,
+        'log_path': log_path,
         'a_ref': a_ref,
         'tau_ref': tau_ref,
         'point_to_group': point_to_group,

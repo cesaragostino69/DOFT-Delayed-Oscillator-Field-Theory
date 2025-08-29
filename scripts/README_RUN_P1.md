@@ -67,7 +67,8 @@ USE_GPU=1 bash scripts/run_phase1.sh
 
 The script will verify if a GPU is available. If not, it will notify you and proceed with the execution on the CPU.
 
-*For a quick chaos LPC test use `bash scripts/run_quick.sh`, which loads `configs/config_chaos.json`.*
+*For a quick chaos LPC test use `bash scripts/run_quick.sh`, which reads its
+configuration from `configs/config_chaos.json` via the `DOFT_CONFIG` variable.*
 
 3.4. Parallel Execution
 

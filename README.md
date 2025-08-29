@@ -158,7 +158,7 @@ The helper scripts read parameters from JSON files under `configs/`.
 - **Chaos LPC test**
 
   ```bash
-  bash scripts/run_quick.sh    # uses configs/config_chaos.json
+  bash scripts/run_quick.sh    # reads configs/config_chaos.json via DOFT_CONFIG
   ```
 
 - **Parallel chaos test**
@@ -176,6 +176,8 @@ Environment variables:
 - `PAR` – number of parallel shards (default: 4)
 - `SEED_OFFSET_BASE` – base seed offset (default: 0)
 - `SEED_OFFSET` – per‑shard offset set by the wrappers
+- `DOFT_CONFIG` – JSON string or path with simulation parameters. `run_quick.sh`
+  defaults to `configs/config_chaos.json`.
 
 Each run writes results to a timestamped directory under `runs/`.
 

@@ -12,6 +12,16 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     # run simulations in a temporary directory to avoid polluting repo
     monkeypatch.chdir(tmp_path)
 
+    cfg = {
+        "simulation_points": [[1.0, 1.0]],
+        "seeds": [0],
+        "gamma": 0.1,
+        "grid_size": 4,
+        "a_ref": 1.0,
+        "tau_ref": 1.0,
+    }
+    monkeypatch.setenv("DOFT_CONFIG", json.dumps(cfg))
+
     class DummyModel:
         def __init__(self, *args, **kwargs):
             pass
