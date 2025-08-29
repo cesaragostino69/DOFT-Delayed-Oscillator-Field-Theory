@@ -1,3 +1,4 @@
+import logging
 import math
 import warnings
 
@@ -8,6 +9,8 @@ from scipy.stats import theilslopes
 from doft.utils.utils import spectral_entropy
 
 DEFAULT_MAX_RAM_BYTES = 32 * 1024 ** 3
+
+logger = logging.getLogger(__name__)
 
 
 def compute_energy(Q: np.ndarray, P: np.ndarray) -> float:
@@ -336,6 +339,10 @@ class DOFTModel:
                 c_thetas_ci_high.append(hi)
                 c_by_thr[thr_idx].append(slope)
         if not c_thetas:
+            logger.warning(
+                "No wavefronts detected during pulse metrics calculation; "
+                "consider revising parameters."
+            )
             return {
                 "xi_floor": xi_floor,
                 "ceff_pulse": 0.0,
