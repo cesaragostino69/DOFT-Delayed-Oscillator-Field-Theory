@@ -86,7 +86,7 @@ def run_single_sim(a_val, tau_val, seed):
 def main():
     """
     Main orchestrator for the DOFT Phase 1 counter-trial.
-    This version incorporates numerical stability fixes based on audit feedback.
+    This version uses the new IMEX/Leapfrog integrator with Prony memory.
     """
     parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
     parser.add_argument(

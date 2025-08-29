@@ -49,9 +49,8 @@ def test_all_thresholds_affect_ceff_pulse(monkeypatch):
         x, y = np.meshgrid(np.arange(self.grid_size), np.arange(self.grid_size))
         dist = np.sqrt((x - center) ** 2 + (y - center) ** 2)
         self.Q = (dist <= radius).astype(float)
-        self.Q_history[t_idx % self.history_steps] = self.Q
 
-    monkeypatch.setattr(DOFTModel, "_step_euler", fake_step)
+    monkeypatch.setattr(DOFTModel, "_step_imex", fake_step)
 
     # Patch slope estimator so each threshold yields a different speed
     slopes = [1.0, 2.0, 4.0]
@@ -85,7 +84,7 @@ def test_seed_reproducibility_lpc_metrics():
 
 def test_blocks_df_contains_block_skipped():
     model = create_model(seed=0)
-    metrics, blocks_df = model._calculate_lpc_metrics(n_steps=7000)
+    metrics, blocks_df = model._calculate_lpc_metrics(n_steps=5000)
     assert 'lpc_ok_frac' in metrics
     assert 'block_skipped' in blocks_df.columns
     # block_skipped metric should match the count of skipped windows

@@ -1,5 +1,9 @@
 import numpy as np
 import pytest
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from doft.models.model import DOFTModel, compute_total_energy
 
@@ -41,7 +45,6 @@ def test_total_energy_passive(coupling, damping, memory_params):
     if model.y_states is not None:
         model.y_states[:] = 0.1
 
-    model.Q_history[0] = model.Q
     model.last_energy = compute_total_energy(
         model.Q, model.P, model.a_nondim, model.y_states, model.kernel_params
     )
@@ -49,7 +52,7 @@ def test_total_energy_passive(coupling, damping, memory_params):
     initial_energy = model.last_energy
     energies = [initial_energy]
     for t_idx in range(10):
-        model._step_euler(t_idx)
+        model._step_imex(t_idx)
         e = compute_total_energy(
             model.Q, model.P, model.a_nondim, model.y_states, model.kernel_params
         )
