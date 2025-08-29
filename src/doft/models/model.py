@@ -7,6 +7,7 @@ import warnings
 
 from doft.utils.utils import spectral_entropy
 
+MAX_RAM_BYTES = 32 * 1024**3
 
 def compute_energy(Q: np.ndarray, P: np.ndarray) -> float:
     """Return total nondimensional energy of the lattice.
@@ -158,7 +159,6 @@ class DOFTModel:
 
         self.Q = np.zeros((grid_size, grid_size), dtype=np.float64)
         self.P = np.zeros((grid_size, grid_size), dtype=np.float64)
-        self.Q_history = np.zeros((self.history_steps, grid_size, grid_size), dtype=np.float64)
 
         # Memory states for Prony-chain kernels (optional)
         self.kernel_params = kernel_params
@@ -167,6 +167,20 @@ class DOFTModel:
             self.y_states = np.zeros((n_modes, grid_size, grid_size), dtype=np.float64)
         else:
             self.y_states = None
+
+        bytes_per_slice = grid_size * grid_size * np.dtype(np.float64).itemsize
+        memory_used = 2 * bytes_per_slice
+        if self.y_states is not None:
+            memory_used += self.y_states.shape[0] * bytes_per_slice
+        available_bytes = MAX_RAM_BYTES - memory_used
+        self.max_history_steps = max(0, available_bytes // bytes_per_slice)
+        if self.history_steps > self.max_history_steps:
+            raise MemoryError(
+                "Requested history length exceeds available 32 GB of RAM"
+            )
+        self.Q_history = np.zeros(
+            (self.history_steps, grid_size, grid_size), dtype=np.float64
+        )
 
         # Select energy functional
         if energy_mode == "basic":
@@ -340,6 +354,10 @@ class DOFTModel:
                 self.dt = self.dt_nondim * self.tau_ref
                 self.delay_in_steps = self.tau / self.dt
                 required_history = int(math.ceil(self.tau / self.dt))
+                if required_history > self.max_history_steps:
+                    raise MemoryError(
+                        "History buffer exceeds 32 GB limit. Aborting simulation."
+                    )
                 if self.history_steps < required_history:
                     new_history_steps = required_history + 5
                     new_Q_history = np.zeros(
@@ -359,6 +377,10 @@ class DOFTModel:
             self.delay_in_steps = self.tau / self.dt
 
             required_history = int(math.ceil(self.tau / self.dt))
+            if required_history > self.max_history_steps:
+                raise MemoryError(
+                    "History buffer exceeds 32 GB limit. Aborting simulation."
+                )
             if self.history_steps < required_history:
                 new_history_steps = required_history + 5
                 new_Q_history = np.zeros(
