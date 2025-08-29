@@ -1,5 +1,6 @@
 # src/doft/simulation/run_sim.py
 import argparse
+import logging
 import pandas as pd
 import numpy as np
 import time
@@ -9,6 +10,9 @@ from pathlib import Path
 import subprocess
 
 from doft.models.model import DOFTModel
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
 def main():
     """
@@ -81,6 +85,19 @@ def main():
             )
 
             run_metrics, blocks_df = model.run()
+            logger.info(
+                "run_id=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
+                "C-2: var_c_over_c2=%s anisotropy_max_pct=%s "
+                "C-3: lpc_ok_frac=%s lpc_vcount=%s",
+                run_id,
+                run_metrics.get('ceff_pulse'),
+                run_metrics.get('ceff_pulse_ic95_lo'),
+                run_metrics.get('ceff_pulse_ic95_hi'),
+                run_metrics.get('var_c_over_c2'),
+                run_metrics.get('anisotropy_max_pct'),
+                run_metrics.get('lpc_ok_frac'),
+                run_metrics.get('lpc_vcount'),
+            )
 
             run_metrics['run_id'] = run_id
             run_metrics['seed'] = seed
