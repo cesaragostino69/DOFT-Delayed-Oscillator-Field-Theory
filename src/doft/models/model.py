@@ -79,6 +79,7 @@ class DOFTModel:
         max_lpc_steps: int | None = None,
         lpc_duration_physical: float | None = None,
         kernel_params: dict | None = None,
+        max_ram_bytes: int | None = None,
         energy_mode: str = "auto",
         log_steps: bool = False,
         log_path: str | None = None,
@@ -146,18 +147,17 @@ class DOFTModel:
 
         self.max_ram_bytes = max_ram_bytes or DEFAULT_MAX_RAM_BYTES
 
+        self.max_ram_bytes = max_ram_bytes or MAX_RAM_BYTES
+
         bytes_per_slice = grid_size * grid_size * np.dtype(np.float64).itemsize
         memory_used = 2 * bytes_per_slice
         if self.y_states is not None:
             memory_used += self.y_states.shape[0] * bytes_per_slice
-        if memory_used > self.max_ram_bytes:
+        available_bytes = self.max_ram_bytes - memory_used
+        self.max_history_steps = max(0, available_bytes // bytes_per_slice)
+        if self.history_steps > self.max_history_steps:
             raise MemoryError(
-                f"Requested configuration needs {memory_used / 1024 ** 3:.2f} GB, exceeds limit {self.max_ram_bytes / 1024 ** 3:.2f} GB"
-            )
-        if memory_used > 0.8 * self.max_ram_bytes:
-            warnings.warn(
-                f"Estimated memory usage {memory_used / 1024 ** 3:.2f} GB approaching limit {self.max_ram_bytes / 1024 ** 3:.2f} GB",
-                ResourceWarning,
+                f"Requested history length exceeds available {self.max_ram_bytes / 1024**3:.0f} GB of RAM",
             )
 
         # Select energy functional
@@ -267,11 +267,51 @@ class DOFTModel:
             if new_dt < self.min_dt_nondim:
                 self.dt_nondim = self.min_dt_nondim
                 self.dt = self.dt_nondim * self.tau_ref
+                self.delay_in_steps = self.tau / self.dt
+                required_history = int(math.ceil(self.tau / self.dt))
+                if required_history > self.max_history_steps:
+                    raise MemoryError(
+                        f"History buffer exceeds {self.max_ram_bytes / 1024**3:.0f} GB limit. Aborting simulation."
+                    )
+                if self.history_steps < required_history:
+                    new_history_steps = required_history + 5
+                    new_Q_history = np.zeros(
+                        (new_history_steps, self.grid_size, self.grid_size),
+                        dtype=self.Q_history.dtype,
+                    )
+                    for i in range(self.history_steps):
+                        new_Q_history[(t_idx - i) % new_history_steps] = self.Q_history[
+                            (t_idx - i) % self.history_steps
+                        ]
+                    self.Q_history = new_Q_history
+                    self.history_steps = new_history_steps
                 break
             self.dt_nondim = new_dt
             self.dt = self.dt_nondim * self.tau_ref
+            self.delay_in_steps = self.tau / self.dt
 
-    def _log_step(self, t_idx: int) -> None:
+            required_history = int(math.ceil(self.tau / self.dt))
+            if required_history > self.max_history_steps:
+                raise MemoryError(
+                    "History buffer exceeds 32 GB limit. Aborting simulation."
+                )
+            if self.history_steps < required_history:
+                new_history_steps = required_history + 5
+                new_Q_history = np.zeros(
+                    (new_history_steps, self.grid_size, self.grid_size),
+                    dtype=self.Q_history.dtype,
+                )
+                for i in range(self.history_steps):
+                    new_Q_history[(t_idx - i) % new_history_steps] = self.Q_history[
+                        (t_idx - i) % self.history_steps
+                    ]
+                self.Q_history = new_Q_history
+                self.history_steps = new_history_steps
+
+
+    def _log_step(self, t_idx: int):
+        """Store per-step energy and LPC metrics if logging is enabled."""
+
         terms = compute_energy_terms(
             self.Q,
             self.P,
