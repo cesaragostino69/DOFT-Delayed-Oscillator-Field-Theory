@@ -137,6 +137,15 @@ def main():
     This version uses the new IMEX/Leapfrog integrator with Prony memory.
     """
     parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
+    default_config = os.environ.get(
+        "DOFT_CONFIG",
+        str(Path(__file__).resolve().parents[3] / "configs" / "config_phase1.json"),
+    )
+    parser.add_argument(
+        "--config",
+        default=default_config,
+        help="Path to JSON file with sweep configuration",
+    )
     parser.add_argument(
         "--boundary",
         choices=["periodic", "reflective", "absorbing"],
@@ -168,6 +177,7 @@ def main():
     )
     args = parser.parse_args()
 
+<<<<<<< ours
     env_cfg = _load_env_config()
     default_cfg = {
         "gamma": 0.05,
@@ -261,6 +271,27 @@ def main():
     a_ref = 1.0
     tau_ref = 1.0
 >>>>>>> theirs
+=======
+    # --- Load Configuration from JSON ---
+    with open(args.config, "r") as f:
+        loaded_cfg = json.load(f)
+
+    seeds = loaded_cfg.get("seeds", [])
+    sweep_groups = loaded_cfg.get("sweep_groups", {})
+    numerical_params = loaded_cfg.get("numerical_params", {})
+
+    gamma = numerical_params.get("gamma", 0.0)
+    grid_size = numerical_params.get("grid_size", 0)
+    a_ref = numerical_params.get("a_ref", 1.0)
+    tau_ref = numerical_params.get("tau_ref", 1.0)
+
+    simulation_points = []
+    point_to_group = {}
+    for gname, pts in sweep_groups.items():
+        for a_val, tau_val in pts:
+            simulation_points.append((a_val, tau_val))
+            point_to_group[(a_val, tau_val)] = gname
+>>>>>>> theirs
 
     # --- Create Unique Output Directory ---
     base_run_dir = 'runs'
@@ -344,6 +375,12 @@ def main():
         'total_runs_in_sweep': total_sims,
         'simulation_points': simulation_points,
         'seeds_used': seeds,
+        'config_source': args.config,
+        'config_params': {
+            'seeds': seeds,
+            'sweep_groups': sweep_groups,
+            'numerical_params': numerical_params,
+        },
         'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
         'sweep_groups': sweep_groups,
         'config_file': args.config,
