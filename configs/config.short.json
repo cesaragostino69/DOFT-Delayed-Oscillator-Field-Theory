@@ -4,22 +4,20 @@
   "seeds": [42],
   "sweep_groups": [
     {
-      "name": "single",
+      "name": "default",
       "points": [[1.0, 1.0]]
     }
   ],
   "numerical_params": {
-    "dt": 0.02,
-    "dx": 1.0,
+    "dt": 0.01,
     "steps": 100,
-    "window": 64
+    "log_interval": 10
   },
   "physics_params": {
-    "K": 0.3,
-    "pulse_steps": 20,
-    "lpc_steps": 40
+    "total_duration": 1.0,
+    "block_duration": 0.1
   },
   "metrics_params": {
-    "log_interval": 10
+    "window": 64
   }
 }
