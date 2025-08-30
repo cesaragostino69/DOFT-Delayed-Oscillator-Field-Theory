@@ -77,12 +77,40 @@ class DOFTModel:
         dt_nondim: float | None = None,
         max_pulse_steps: int | None = None,
         max_lpc_steps: int | None = None,
+        lpc_duration_physical: float | None = None,
         kernel_params: dict | None = None,
         energy_mode: str = "auto",
         log_steps: bool = False,
         log_path: str | None = None,
+<<<<<<< ours
         max_ram_bytes: int | None = None,
     ) -> None:
+=======
+    ):
+        """Create a new model instance.
+
+        Parameters
+        ----------
+        grid_size, a, tau, a_ref, tau_ref, gamma, seed :
+            Standard model configuration parameters.
+        boundary_mode : str, optional
+            Boundary condition for the lattice (default ``"periodic"``).
+        dt_nondim : float, optional
+            Desired nondimensional time step. If unstable a safe value is
+            substituted.
+        max_pulse_steps : int, optional
+            Optional cap on the number of steps used for pulse metrics.
+        max_lpc_steps : int, optional
+            Optional cap on steps for LPC metrics. Ignored if
+            ``lpc_duration_physical`` is provided.
+        lpc_duration_physical : float, optional
+            Physical duration for the LPC analysis. Converted to steps using
+            ``dt`` and stored in ``max_lpc_steps``.
+        kernel_params, energy_mode, log_steps, log_path :
+            Additional configuration options.
+        """
+
+>>>>>>> theirs
         self.grid_size = grid_size
         self.seed = seed
         self.rng = np.random.default_rng(self.seed)
@@ -154,6 +182,8 @@ class DOFTModel:
 
         self.max_pulse_steps = max_pulse_steps
         self.max_lpc_steps = max_lpc_steps
+        if lpc_duration_physical is not None:
+            self.max_lpc_steps = int(math.ceil(lpc_duration_physical / self.dt))
 
         self.log_steps = log_steps
         self.log_path = log_path or "step_log"
