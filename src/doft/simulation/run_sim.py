@@ -142,21 +142,23 @@ def main():
     point_to_group = {}
     sweep_groups = cfg_json.get('sweep_groups')
     if sweep_groups:
-        for group in sweep_groups:
-            name = group.get('name', 'group')
-            for pt in group.get('points', []):
-                a_val, tau_val = pt
+        # Expect a mapping of group name -> list of [a, tau] pairs
+        for name, pts in sweep_groups.items():
+            for a_val, tau_val in pts:
                 pt_t = (a_val, tau_val)
                 simulation_points.append(pt_t)
                 point_to_group[pt_t] = name
     else:
-        group1 = [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)]
-        group2 = [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)]
-        group3 = [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)]
-        simulation_points = group1 + group2 + group3
-        for pt in group1: point_to_group[pt] = 'g1'
-        for pt in group2: point_to_group[pt] = 'g2'
-        for pt in group3: point_to_group[pt] = 'g3'
+        # Default sweep configuration if none provided
+        default_groups = {
+            'g1': [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)],
+            'g2': [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)],
+            'g3': [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)],
+        }
+        for name, pts in default_groups.items():
+            for pt in pts:
+                simulation_points.append(pt)
+                point_to_group[pt] = name
 
     # --- Create Unique Output Directory ---
     base_run_dir = 'runs'

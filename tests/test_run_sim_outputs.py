@@ -49,10 +49,13 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
         'gamma': 0.05,
         'grid_size': 4,
         'boundary_mode': 'periodic',
+        'log_steps': False,
+        'log_path': None,
+        'lpc_duration_physical': 1.0,
         'seeds': [0],
-        'sweep_groups': [
-            {'name': 'g1', 'points': [[1.0, 1.0]]}
-        ],
+        'sweep_groups': {
+            'g1': [[1.0, 1.0]],
+        },
     }
     config_path = tmp_path / 'config.json'
     config_path.write_text(json.dumps(cfg))
