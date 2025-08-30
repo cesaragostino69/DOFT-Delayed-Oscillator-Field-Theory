@@ -158,6 +158,7 @@ def main():
         action="store_true",
         help="Run simulations in parallel using multiprocessing",
     )
+<<<<<<< ours
     parser.add_argument(
         "--mem-limit",
         type=float,
@@ -208,6 +209,40 @@ def main():
     max_lpc_steps = cfg.get("max_lpc_steps")
     kernel_params = cfg.get("kernel_params")
     energy_mode = cfg.get("energy_mode", "auto")
+=======
+    repo_root = Path(__file__).resolve().parents[2]
+    default_config = os.environ.get("DOFT_CONFIG") or str(
+        repo_root / "configs" / "config_phase1.json"
+    )
+    parser.add_argument(
+        "--config",
+        default=default_config,
+        help="Path to JSON configuration file",
+    )
+    args = parser.parse_args()
+
+    # --- Load Config ---
+    with open(args.config, "r") as f:
+        cfg = json.load(f)
+
+    gamma = cfg.get("gamma", 0.05)
+    grid_size = cfg.get("grid_size", 100)
+    seeds = cfg.get("seeds", [42, 123, 456, 789, 1011])
+    sweep_groups = cfg.get("sweep_groups", {})
+
+    simulation_points = []
+    point_to_group = {}
+    for group_name, points in sweep_groups.items():
+        for pt in points:
+            pt_tuple = tuple(pt)
+            simulation_points.append(pt_tuple)
+            point_to_group[pt_tuple] = group_name
+
+    # STABILITY FIX: Define reference parameters for nondimensionalization.
+    # We use the central point of the sweep as the reference scale.
+    a_ref = 1.0
+    tau_ref = 1.0
+>>>>>>> theirs
 
     # --- Create Unique Output Directory ---
     base_run_dir = 'runs'
@@ -292,6 +327,8 @@ def main():
         'simulation_points': simulation_points,
         'seeds_used': seeds,
         'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
+        'sweep_groups': sweep_groups,
+        'config_file': args.config,
         'stability_params': {
             'dt_logic': 'min(0.02, 0.1, tau_nondim/50, 0.1/(gamma_nondim + |a_nondim| + 1))',
             'a_ref': a_ref,
