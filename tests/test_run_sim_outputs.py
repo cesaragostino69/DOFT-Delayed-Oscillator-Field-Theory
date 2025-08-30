@@ -12,9 +12,13 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     # run simulations in a temporary directory to avoid polluting repo
     monkeypatch.chdir(tmp_path)
 
+    captured = {}
+
     class DummyModel:
         def __init__(self, *args, **kwargs):
-            pass
+            # capture all initialization kwargs so we can ensure run_sim passes
+            # the values it read from the configuration file
+            captured.update(kwargs)
 
         def run(self):
             metrics = {
@@ -44,13 +48,14 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     monkeypatch.setattr(run_sim, 'DOFTModel', DummyModel)
 
     cfg = {
-        'a_ref': 1.0,
-        'tau_ref': 1.0,
+        # Use non-default values to ensure they are picked up from the config
+        'a_ref': 2.0,
+        'tau_ref': 3.0,
         'gamma': 0.05,
         'grid_size': 4,
-        'boundary_mode': 'periodic',
-        'log_steps': False,
-        'log_path': None,
+        'boundary_mode': 'absorbing',
+        'log_steps': True,
+        'log_path': 'my_logs',
         'lpc_duration_physical': 1.0,
         'seeds': [0],
         'sweep_groups': {
@@ -62,6 +67,13 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     monkeypatch.setenv('DOFT_CONFIG', str(config_path))
     monkeypatch.setattr(sys, 'argv', ['run_sim'])
     run_sim.main()
+
+    # verify that configuration parameters were passed through
+    assert captured['a_ref'] == cfg['a_ref']
+    assert captured['tau_ref'] == cfg['tau_ref']
+    assert captured['boundary_mode'] == cfg['boundary_mode']
+    assert captured['log_steps'] == cfg['log_steps']
+    assert captured['log_path'] == cfg['log_path']
 
     run_dir = next((tmp_path / 'runs').glob('phase1_run_*'))
     runs_df = pd.read_csv(run_dir / 'runs.csv')
