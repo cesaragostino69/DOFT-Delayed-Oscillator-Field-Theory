@@ -1,35 +1,38 @@
 {
-  "L": 128,
-  "steps": 5000,
-  "dt": 0.002,
-  "dx": 1.0,
-  "K": 0.3,
-  "xi_amp": 1e-4,
-  "log_interval": 10,
-  "prony_memory": {
-    "weights": [0.5, 0.3, 0.2],
-    "thetas": [0.01, 0.1, 1.0]
-  },
-  "experiments": [
-    {
-      "name": "ExperimentA_Pulse_C_Emergence",
-      "experiment_type": "pulse",
-      "gamma": 0.05,
-      "a": [
-        {"mean": 1.0, "std": 0.01},
-        {"mean": 1.2, "std": 0.01},
-        {"mean": 1.5, "std": 0.01},
-        {"mean": 1.0, "std": 0.01},
-        {"mean": 1.0, "std": 0.01}
-      ],
-      "tau0": [
-        {"mean": 1.0, "std": 0.01},
-        {"mean": 1.2, "std": 0.01},
-        {"mean": 1.5, "std": 0.01},
-        {"mean": 0.8, "std": 0.01},
-        {"mean": 0.67, "std": 0.01}
-      ],
-      "seeds": [101, 102, 103, 104, 105]
-    }
+  "grid_size": 100,
+  "gamma": 0.05,
+  "seeds": [42, 123, 456, 789, 1011],
+  "sweep_groups": {
+    "group1": [
+      {"a": 1.0, "tau": 1.0},
+      {"a": 1.2, "tau": 1.2},
+      {"a": 1.5, "tau": 1.5}
+    ],
+    "group2": [
+      {"a": 1.0, "tau": 1.0},
+      {"a": 1.2, "tau": 1.0},
+      {"a": 1.5, "tau": 1.0}
+    ],
+    "group3": [
+      {"a": 1.0, "tau": 1.0},
+      {"a": 1.0, "tau": 0.8},
+      {"a": 1.0, "tau": 0.67}
     ]
+  },
+  "numerical_params": {
+    "integrator": "semiimplicit",
+    "memory_model": "prony",
+    "nondimensional_dt": 0.02,
+    "a_ref": 1.0,
+    "tau_ref": 1.0
+  },
+  "physics_params": {
+    "pulse_amplitude": 1.0,
+    "pulse_width": 5.0,
+    "lpc_initial_noise_amplitude": 0.01
+  },
+  "metrics_params": {
+    "detection_threshold_high": 0.8,
+    "detection_threshold_low": 0.3
   }
+}
