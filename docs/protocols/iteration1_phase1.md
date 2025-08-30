@@ -4,33 +4,33 @@
 
 **Objective:** Demonstrate that **c** is **emergent** (not imposed) and validate **LPC** (Law of Preservation of Chaos) in a **closed–passive** network.
 
-**Phase 1 Go/No-Go (all must pass):**  
-**(C-1)** Fit of \$(c_{\mathrm{eff}}\) vs. \(a_{\mathrm{mean}}/\tau_{\mathrm{mean}}\)$: **slope = 1 ± 5%** and **intercept ~ 0** (95% CI).  
-**(C-2)** Isotropy: \$(\mathrm{Var}(c)/c^2 < 10^{-2}\) and \(\Delta c/c\)$ (max across axes) **< 2%**.  
+**Phase 1 Go/No-Go (all must pass):**
+**(C-1)** Fit of \$(c_{\mathrm{eff}}\) vs. \(a_{\mathrm{mean}}/\tau_{\mathrm{mean}}\)$: **slope = 1 ± 5%** and **intercept ~ 0** (95% CI).
+**(C-2)** Isotropy: \$(\mathrm{Var}(c)/c^2 < 10^{-2}\) and \(\Delta c/c\)$ (max across axes) **< 2%**.
 **(C-3)** LPC in closed–passive mode: **\(\Delta K \le 0\)** in **≥95%** of windows, **without** triggering the brake (lpc_vcount = 0).
 
 ---
 
 ## 1) “Contract” (non-negotiable prereqs)
 
-1) **Remove precomputed c**  
+1) **Remove precomputed c**
 It is **forbidden** to derive \(c_{\mathrm{eff}}\) from \(a/\tau_0\), **z_map**, or any telemetry. The **only** valid measurement of \(c\) comes from the **front of a pulse** (or, optionally, \(\omega(k)\) dispersion with a Lorentz window).
 
-2) **Operational damping**  
+2) **Operational damping**
 The dissipative term \(-\gamma P\) **must** affect dynamics. Minimal test: with \(\gamma>0\), \(\xi=0\), the total energy **must decay**.
 
-3) **Determinism & precision**  
-- Use `float64` end-to-end.  
-- Fixed seeds: `seed_global`, `seed_init`, `seed_noise`.  
-- Reproducible BLAS/OMP (fixed threads), no *fast-math*.  
+3) **Determinism & precision**
+- Use `float64` end-to-end.
+- Fixed seeds: `seed_global`, `seed_init`, `seed_noise`.
+- Reproducible BLAS/OMP (fixed threads), no *fast-math*.
 - If GPU: disable TF32/cuDNN autotune for reproducibility.
 
-4) **Output format & traceability (required)**  
-- `runs.csv` (one row per run).  
-- `blocks.csv` (one row per chaos-analysis window).  
-- `run_meta.json` (full run metadata).  
-- Artifact naming convention:  
-  `runs/phase1/<YYYYMMDD>_<tag>/run_<runid>/*.csv|.json|.png`
+4) **Output format & traceability (required)**
+- `runs.csv` (one row per run).
+- `blocks.csv` (one row per chaos-analysis window).
+- `run_meta.json` (full run metadata).
+- Artifact naming convention:
+  `runs/passive/phase1_run_<timestamp>/*.csv|.json|.png` (use `runs/active/` if `gamma < 0`)
 
 ---
 
@@ -38,14 +38,14 @@ The dissipative term \(-\gamma P\) **must** affect dynamics. Minimal test: with 
 
 ### A) **Emergent c** — **pulse-front** experiment
 
-- **Init:** stable baseline; centered **Gaussian pulse** (amplitude s.t. SNR > 10× noise floor \(\xi\)).  
-- **Measurement:** detect **arrival time** of the front at increasing radii using **three thresholds** relative to the floor (\(1\sigma\), \(3\sigma\), \(5\sigma\)).  
-- **Isotropy:** measure \(c_{\mathrm{eff}}\) along **X, Y, Z** (and a **diagonal** if possible); report \(\Delta c/c\).  
+- **Init:** stable baseline; centered **Gaussian pulse** (amplitude s.t. SNR > 10× noise floor \(\xi\)).
+- **Measurement:** detect **arrival time** of the front at increasing radii using **three thresholds** relative to the floor (\(1\sigma\), \(3\sigma\), \(5\sigma\)).
+- **Isotropy:** measure \(c_{\mathrm{eff}}\) along **X, Y, Z** (and a **diagonal** if possible); report \(\Delta c/c\).
 - **Lorentz window** (optional, recommended): \(\omega(k)\) via space–time FFT; linear regime with relative curvature < 5%.
 
-**“Break the constant” sweep (3×3, ≥5 seeds per point):**  
-- **G1 (fixed ratio):** \((a,\tau)= (1.0,1.0),(1.2,1.2),(1.5,1.5)\) ⇒ **expectation:** \(c\) ~ constant.  
-- **G2 (↑a, fixed \(\tau\)):** \((1.0,1.0),(1.2,1.0),(1.5,1.0)\) ⇒ **expectation:** \(c\uparrow\) proportionally.  
+**“Break the constant” sweep (3×3, ≥5 seeds per point):**
+- **G1 (fixed ratio):** \((a,\tau)= (1.0,1.0),(1.2,1.2),(1.5,1.5)\) ⇒ **expectation:** \(c\) ~ constant.
+- **G2 (↑a, fixed \(\tau\)):** \((1.0,1.0),(1.2,1.0),(1.5,1.0)\) ⇒ **expectation:** \(c\uparrow\) proportionally.
 - **G3 (↓\(\tau\), fixed \(a\)):** \((1.0,1.0),(1.0,0.8),(1.0,0.67)\) ⇒ **expectation:** \(c\uparrow\) proportionally.
 
 **KPIs A:** linear fit \(c_{\mathrm{eff}}\) vs \(a/\tau\) (slope, intercept, R², 95% CI); \(\mathrm{Var}(c)/c^2\), \(\Delta c/c\), and \(\omega(k)\) linear range if applicable.
@@ -54,12 +54,12 @@ The dissipative term \(-\gamma P\) **must** affect dynamics. Minimal test: with 
 
 ### B) **LPC** in **closed–passive**
 
-- **Init:** **Gaussian noise** of **high amplitude** (high \(K(0)\)).  
-- **Dynamics:** \(\gamma \ge 0\), **no drives**, no active boundaries; memory kernel **passive**.  
+- **Init:** **Gaussian noise** of **high amplitude** (high \(K(0)\)).
+- **Dynamics:** \(\gamma \ge 0\), **no drives**, no active boundaries; memory kernel **passive**.
 - **Metric:** **spectral entropy** per block (**Welch** or windowed periodogram with **detrending**); overlapping windows (e.g., 50%); \(\Delta K\) between consecutive windows.
 
-**KPIs B:**  
-- **Closed–passive:** \(\Delta K \le 0\) in **≥95%** of windows; `lpc_vcount = 0`; **no NaNs**.  
+**KPIs B:**
+- **Closed–passive:** \(\Delta K \le 0\) in **≥95%** of windows; `lpc_vcount = 0`; **no NaNs**.
 - **Open/active (optional QA):** with \(\gamma \approx -0.01\) or boundary drive, the **brake** should engage (lpc_vcount>0) and return \(\Delta K\) to \(\le 0\). *Does not count* toward (C-3); this is brake QA.
 
 ---

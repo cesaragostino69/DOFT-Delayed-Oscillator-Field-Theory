@@ -160,7 +160,7 @@ The helper scripts read parameters from JSON files under `configs/`.
   ```
   Runs a tiny 16×16 grid for a handful of steps to verify the pipeline.
 
-Each run writes results to a timestamped directory under `runs/`.
+Each run writes results to a timestamped directory under `runs/passive/` if `gamma ≥ 0`, or under `runs/active/` if `gamma < 0`.
 
 ### Self-averaging report
 
