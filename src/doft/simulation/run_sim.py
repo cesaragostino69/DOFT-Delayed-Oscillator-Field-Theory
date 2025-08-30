@@ -159,6 +159,7 @@ def main():
         help="Run simulations in parallel using multiprocessing",
     )
 <<<<<<< ours
+<<<<<<< ours
     parser.add_argument(
         "--mem-limit",
         type=float,
@@ -225,6 +226,23 @@ def main():
     with open(args.config, "r") as f:
         cfg = json.load(f)
 
+=======
+    repo_root = Path(__file__).resolve().parents[2]
+    default_config = os.environ.get("DOFT_CONFIG") or str(
+        repo_root / "configs" / "config_phase1.json"
+    )
+    parser.add_argument(
+        "--config",
+        default=default_config,
+        help="Path to JSON configuration file",
+    )
+    args = parser.parse_args()
+
+    # --- Load Config ---
+    with open(args.config, "r") as f:
+        cfg = json.load(f)
+
+>>>>>>> theirs
     gamma = cfg.get("gamma", 0.05)
     grid_size = cfg.get("grid_size", 100)
     seeds = cfg.get("seeds", [42, 123, 456, 789, 1011])
