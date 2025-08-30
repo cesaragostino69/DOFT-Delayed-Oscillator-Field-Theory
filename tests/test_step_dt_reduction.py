@@ -3,7 +3,6 @@ import sys  # Needed for adjusting sys.path
 from pathlib import Path
 
 import numpy as np
-import math
 
 # Ensure package import works
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -70,9 +69,6 @@ def test_history_resize_after_multiple_halvings():
     # Artificially set a much larger time step to force multiple halvings
     model.dt_nondim = 0.5
     model.dt = model.dt_nondim * model.tau_ref
-    model.delay_in_steps = model.tau / model.dt
-    model.history_steps = int(math.ceil(model.tau / model.dt)) + 5
-    model.Q_history = np.zeros((model.history_steps, model.grid_size, model.grid_size))
 
     model.Q = model.rng.normal(0, 0.1, model.Q.shape)
     model.last_energy = model.energy_fn(model.Q, model.P)
@@ -81,5 +77,5 @@ def test_history_resize_after_multiple_halvings():
     model._step_imex(0)
 
     assert model.dt_nondim < initial_dt / 2  # ensure multiple halvings occurred
-    assert model.history_steps >= math.ceil(model.tau / model.dt)
-    assert model.Q_history.shape[0] == model.history_steps
+    assert model.Q_delay.shape == model.Q.shape
+    assert np.all(np.isfinite(model.Q_delay))

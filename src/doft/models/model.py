@@ -151,12 +151,6 @@ class DOFTModel:
         # The physical tau is still needed for delay calculation
         self.tau = tau
 
-        # Precompute delay in time steps to avoid repeated calculation
-        self.delay_in_steps = self.tau / self.dt
-
-        # Correctly size the history buffer with the new, smaller dt
-        self.history_steps = int(math.ceil(self.tau / self.dt)) + 5  # Added safe margin
-
         self.Q = np.zeros((grid_size, grid_size), dtype=np.float64)
         self.P = np.zeros((grid_size, grid_size), dtype=np.float64)
 
@@ -168,23 +162,11 @@ class DOFTModel:
         else:
             self.y_states = None
 
+        # Delayed state approximated by a single Prony variable
+        self.Q_delay = np.zeros((grid_size, grid_size), dtype=np.float64)
 
-        bytes_per_slice = grid_size * grid_size * np.dtype(np.float64).itemsize
-        memory_used = 2 * bytes_per_slice
-        if self.y_states is not None:
-            memory_used += self.y_states.shape[0] * bytes_per_slice
-        # Cap history buffer based on available RAM
+        # Keep parameter for compatibility but no longer used to size history buffers
         self.max_ram_bytes = max_ram_bytes
-        available_bytes = self.max_ram_bytes - memory_used
-        self.max_history_steps = max(0, available_bytes // bytes_per_slice)
-        if self.history_steps > self.max_history_steps:
-            raise MemoryError(
-                "Requested history length exceeds available memory",
-            )
-
-        self.Q_history = np.zeros(
-            (self.history_steps, grid_size, grid_size), dtype=np.float64
-        )
 
         # Select energy functional
         if energy_mode == "basic":
@@ -223,33 +205,16 @@ class DOFTModel:
         self._K_m2 = 0.0
         self._K_count = 0
 
-    def _get_delayed_q_interpolated(self, t_idx):
+    def _get_delayed_q_interpolated(self, t_idx: int | None = None):
+        """Return the delayed field stored in the auxiliary state.
+
+        The previous implementation used an explicit history buffer with
+        interpolation. It has been replaced by a single auxiliary Prony
+        variable updated in :meth:`_step_imex`, so ``t_idx`` is unused but
+        retained for backward compatibility.
         """
-        STABILITY FIX #3: LINEAR INTERPOLATION FOR DELAYS
-        Improves accuracy and stability by interpolating between two past time steps
-        instead of taking the nearest neighbor.
-        """
-        delay_in_steps = self.delay_in_steps
 
-        idx_floor = int(math.floor(delay_in_steps))
-        idx_ceil = int(math.ceil(delay_in_steps))
-
-        if idx_floor == idx_ceil:
-            # The delay is an exact multiple of dt
-            history_idx = (t_idx - idx_floor) % self.history_steps
-            return self.Q_history[history_idx]
-
-        # Get the two bracketing time steps from history
-        hist_idx1 = (t_idx - idx_floor) % self.history_steps
-        hist_idx2 = (t_idx - idx_ceil) % self.history_steps
-        Q1 = self.Q_history[hist_idx1]
-        Q2 = self.Q_history[hist_idx2]
-
-        # Interpolation factor (fractional part)
-        frac = delay_in_steps - idx_floor
-
-        # Linearly interpolate between the two states
-        return Q2 * frac + Q1 * (1.0 - frac)
+        return self.Q_delay
 
     def _laplacian(self, field: np.ndarray, mode: str | None = None) -> np.ndarray:
         """Return discrete Laplacian of ``field`` with boundary ``mode``.
@@ -328,7 +293,7 @@ class DOFTModel:
             if scale > self.scale_threshold:
                 Q_new /= scale
                 P_new /= scale
-                self.Q_history /= scale
+                self.Q_delay /= scale
                 self.scale_accum *= scale
                 self.last_energy /= scale ** 2
                 energy_prev = self.last_energy
@@ -343,8 +308,9 @@ class DOFTModel:
                 and energy_new_phys <= energy_prev_phys + 1e-12
             ):
                 self.P, self.Q = P_new, Q_new
-                self.Q_history[t_idx % self.history_steps] = self.Q
                 self.last_energy = energy_new
+                alpha = self.dt_nondim / self.tau_nondim if self.tau_nondim > 0 else 0.0
+                self.Q_delay = (self.Q_delay + alpha * self.Q) / (1.0 + alpha)
                 self.energy_log.append(energy_new_phys)
                 self.scale_log.append(self.scale_accum)
                 if self.log_steps:
@@ -373,47 +339,10 @@ class DOFTModel:
                 )
                 self.dt_nondim = self.min_dt_nondim
                 self.dt = self.dt_nondim * self.tau_ref
-                self.delay_in_steps = self.tau / self.dt
-                required_history = int(math.ceil(self.tau / self.dt))
-                if required_history > self.max_history_steps:
-                    raise MemoryError(
-                        "History buffer exceeds memory limit. Aborting simulation."
-                    )
-                if self.history_steps < required_history:
-                    new_history_steps = required_history + 5
-                    new_Q_history = np.zeros(
-                        (new_history_steps, self.grid_size, self.grid_size),
-                        dtype=self.Q_history.dtype,
-                    )
-                    for i in range(self.history_steps):
-                        new_Q_history[(t_idx - i) % new_history_steps] = self.Q_history[
-                            (t_idx - i) % self.history_steps
-                        ]
-                    self.Q_history = new_Q_history
-                    self.history_steps = new_history_steps
                 break
 
             self.dt_nondim = new_dt
             self.dt = self.dt_nondim * self.tau_ref
-            self.delay_in_steps = self.tau / self.dt
-
-            required_history = int(math.ceil(self.tau / self.dt))
-            if required_history > self.max_history_steps:
-                raise MemoryError(
-                    "History buffer exceeds memory limit. Aborting simulation."
-                )
-            if self.history_steps < required_history:
-                new_history_steps = required_history + 5
-                new_Q_history = np.zeros(
-                    (new_history_steps, self.grid_size, self.grid_size),
-                    dtype=self.Q_history.dtype,
-                )
-                for i in range(self.history_steps):
-                    new_Q_history[(t_idx - i) % new_history_steps] = self.Q_history[
-                        (t_idx - i) % self.history_steps
-                    ]
-                self.Q_history = new_Q_history
-                self.history_steps = new_history_steps
 
 
     def _log_step(self, t_idx: int):
@@ -479,7 +408,7 @@ class DOFTModel:
         # Reset fields and optional pre-pulse noise
         self.Q.fill(0.0)
         self.P.fill(0.0)
-        self.Q_history.fill(0.0)
+        self.Q_delay.fill(0.0)
         if noise_std > 0.0:
             self.Q += self.rng.normal(0.0, noise_std, size=self.Q.shape)
 
@@ -612,7 +541,7 @@ class DOFTModel:
         }
 
     def _calculate_lpc_metrics(self, n_steps):
-        self.Q = self.rng.normal(0, 0.1, self.Q.shape); self.P.fill(0.0); self.Q_history.fill(0.0)
+        self.Q = self.rng.normal(0, 0.1, self.Q.shape); self.P.fill(0.0); self.Q_delay.fill(0.0)
         center = self.grid_size // 2
         time_series = np.zeros(n_steps)
         for t_idx in range(n_steps):

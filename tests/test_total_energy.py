@@ -42,7 +42,7 @@ def test_total_energy_passive(coupling, damping, memory_params):
     if model.y_states is not None:
         model.y_states[:] = 0.1
 
-    model.Q_history[0] = model.Q
+    model.Q_delay = model.Q.copy()
     model.last_energy = compute_total_energy(
         model.Q, model.P, model.a_nondim, model.y_states, model.kernel_params
     )

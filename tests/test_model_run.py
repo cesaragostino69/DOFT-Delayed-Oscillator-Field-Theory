@@ -50,7 +50,7 @@ def test_all_thresholds_affect_ceff_pulse(monkeypatch):
         x, y = np.meshgrid(np.arange(self.grid_size), np.arange(self.grid_size))
         dist = np.sqrt((x - center) ** 2 + (y - center) ** 2)
         self.Q = (dist <= radius).astype(float)
-        self.Q_history[t_idx % self.history_steps] = self.Q
+        self.Q_delay = self.Q.copy()
 
     monkeypatch.setattr(DOFTModel, "_step_imex", fake_step)
 
