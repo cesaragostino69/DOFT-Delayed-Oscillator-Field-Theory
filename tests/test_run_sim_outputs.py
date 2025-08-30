@@ -79,7 +79,7 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     assert captured['pulse_amplitude'] == cfg['pulse_amplitude']
     assert captured['detection_thresholds'] == cfg['detection_thresholds']
 
-    run_dir = next((tmp_path / 'runs').glob('phase1_run_*'))
+    run_dir = next((tmp_path / 'runs' / 'passive').glob('phase1_run_*'))
     runs_df = pd.read_csv(run_dir / 'runs.csv')
     required_cols = {'lpc_ok_frac', 'ceff_pulse_ic95_lo', 'ceff_pulse_ic95_hi', 'lorentz_window', 'ceff_iso_diag'}
     assert required_cols.issubset(runs_df.columns)
