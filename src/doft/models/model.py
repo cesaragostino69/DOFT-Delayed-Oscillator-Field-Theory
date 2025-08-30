@@ -215,6 +215,25 @@ class DOFTModel:
         self._K_count = 0
 
         self.integrator = integrator
+        # Map integrator to the appropriate stepping function
+        integ_lower = integrator.lower()
+        if integ_lower == "leapfrog":
+            if gamma != 0.0:
+                raise ValueError("Leapfrog integrator requires gamma = 0")
+            if kernel_params is not None:
+                raise ValueError(
+                    "Leapfrog integrator incompatible with memory terms"
+                )
+
+            def _step(t_idx, self=self):
+                return self._step_leapfrog(t_idx)
+
+            self._step = _step
+        else:
+            def _step(t_idx, self=self):
+                return self._step_imex(t_idx)
+
+            self._step = _step
 
     def _get_delayed_q_interpolated(self, t_idx: int | None = None):
         """Return the delayed field stored in the auxiliary state.
@@ -487,11 +506,8 @@ class DOFTModel:
             for thr_idx in range(len(thresholds))
         }
 
-        step_fn = (
-            self._step_leapfrog if self.integrator.lower() == "leapfrog" else self._step_imex
-        )
         for t_idx in range(n_steps):
-            step_fn(t_idx)
+            self._step(t_idx)
             t_now = t_idx * self.dt
             for theta in thetas:
                 cos_t, sin_t = np.cos(theta), np.sin(theta)
@@ -594,11 +610,8 @@ class DOFTModel:
         self.Q = self.rng.normal(0, 0.1, self.Q.shape); self.P.fill(0.0); self.Q_delay.fill(0.0)
         center = self.grid_size // 2
         time_series = np.zeros(n_steps)
-        step_fn = (
-            self._step_leapfrog if self.integrator.lower() == "leapfrog" else self._step_imex
-        )
         for t_idx in range(n_steps):
-            step_fn(t_idx)
+            self._step(t_idx)
             time_series[t_idx] = self.Q[center, center]
 
         # STABILITY FIX #4: NUMERICAL GUARD
