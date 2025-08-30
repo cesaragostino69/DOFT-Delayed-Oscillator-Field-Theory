@@ -1,23 +1,36 @@
 {
   "grid_size": 64,
-  "gamma": 0.05,
-  "seeds": [42],
+  "gamma": 0.0,
+  "seeds": [0, 1, 2],
   "sweep_groups": [
     {
-      "name": "default",
-      "points": [[1.0, 1.0]]
+      "name": "short_sweep",
+      "gammas": [0.0, 0.1, 0.3],
+      "xis": [0.0, 0.001, 0.003],
+      "a": {"mean": 1.0, "sigma": 0.02},
+      "tau0": {"mean": 0.5, "sigma": 0.01},
+      "batch_replicas": 64
     }
   ],
   "numerical_params": {
-    "dt": 0.01,
-    "steps": 100,
-    "log_interval": 10
+    "steps": 120000,
+    "dt": 0.001,
+    "dx": 1.0,
+    "log_interval": 60
   },
   "physics_params": {
-    "total_duration": 1.0,
-    "block_duration": 0.1
+    "K": 0.3,
+    "xi_amp": 0.0,
+    "prony_memory": {
+      "weights": [0.6, 0.3, 0.1],
+      "thetas": [0.001, 0.01, 0.1]
+    }
   },
   "metrics_params": {
-    "window": 64
+    "windowing": {
+      "len_steps": 2048,
+      "overlap": 0.5,
+      "detrend": "linear"
+    }
   }
 }
