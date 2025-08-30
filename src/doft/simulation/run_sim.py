@@ -57,6 +57,8 @@ def run_single_sim(a_val, tau_val, seed):
         detection_thresholds=_CONFIG['detection_thresholds'],
         max_pulse_steps=_CONFIG.get('max_pulse_steps'),
         max_lpc_steps=_CONFIG.get('max_lpc_steps'),
+        kernel_params=_CONFIG.get('kernel_params'),
+        integrator=_CONFIG.get('integrator'),
     )
 
     run_metrics, blocks_df = model.run()
@@ -144,6 +146,17 @@ def main():
     detection_thresholds = cfg_json.get('detection_thresholds', [1.0, 3.0, 5.0])
     max_pulse_steps = cfg_json.get('max_pulse_steps')
     max_lpc_steps = cfg_json.get('max_lpc_steps')
+    kernel_params = cfg_json.get('kernel_params')
+
+    # Numerical parameters
+    numerical_params = cfg_json.get('numerical_params', {})
+    integrator = cfg_json.get('integrator', numerical_params.get('integrator', 'IMEX'))
+
+    if integrator == 'Leapfrog':
+        if gamma != 0:
+            raise ValueError('Leapfrog integrator requires gamma = 0')
+        if kernel_params:
+            raise ValueError('Leapfrog integrator incompatible with memory (kernel_params)')
 
     # --- Sweep Configuration ---
     simulation_points = []
@@ -201,6 +214,8 @@ def main():
         'detection_thresholds': detection_thresholds,
         'max_pulse_steps': max_pulse_steps,
         'max_lpc_steps': max_lpc_steps,
+        'kernel_params': kernel_params,
+        'integrator': integrator,
     }
 
     counter = mp.Value('i', 0)
