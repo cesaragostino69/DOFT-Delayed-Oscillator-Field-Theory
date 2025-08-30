@@ -52,6 +52,7 @@ def run_single_sim(a_val, tau_val, seed):
         log_steps=_CONFIG['log_steps'],
         log_path=_CONFIG['log_path'],
         max_ram_bytes=_CONFIG['max_ram_bytes'],
+        lpc_duration_physical=_CONFIG.get('lpc_duration_physical'),
     )
 
     run_metrics, blocks_df = model.run()
@@ -160,7 +161,14 @@ def main():
         'tau_ref': tau_ref,
         'point_to_group': point_to_group,
         'max_ram_bytes': 32 * 1024**3,
+        'lpc_duration_physical': None,
     }
+
+    config_path = os.environ.get('DOFT_CONFIG')
+    if config_path and os.path.exists(config_path):
+        with open(config_path) as f:
+            cfg_json = json.load(f)
+            config['lpc_duration_physical'] = cfg_json.get('lpc_duration_physical')
 
     counter = mp.Value('i', 0)
     combos = [(a, t, s) for (a, t) in simulation_points for s in seeds]

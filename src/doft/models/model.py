@@ -108,6 +108,7 @@ class DOFTModel:
         dt_nondim: float | None = None,
         max_pulse_steps: int | None = None,
         max_lpc_steps: int | None = None,
+        lpc_duration_physical: float | None = None,
         kernel_params: dict | None = None,
         energy_mode: str = "auto",
         log_steps: bool = False,
@@ -208,7 +209,10 @@ class DOFTModel:
 
         # Optional caps for expensive diagnostic runs
         self.max_pulse_steps = max_pulse_steps
-        self.max_lpc_steps = max_lpc_steps
+        if lpc_duration_physical is not None:
+            self.max_lpc_steps = math.ceil(lpc_duration_physical / self.dt)
+        else:
+            self.max_lpc_steps = max_lpc_steps
 
         # Optional step-by-step logging
         self.log_steps = log_steps
