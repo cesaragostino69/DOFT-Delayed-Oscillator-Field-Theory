@@ -22,6 +22,7 @@ def create_model(boundary):
         seed=0,
         boundary_mode=boundary,
         dt_nondim=0.1,
+        max_ram_bytes=32 * 1024**3,
     )
 
 

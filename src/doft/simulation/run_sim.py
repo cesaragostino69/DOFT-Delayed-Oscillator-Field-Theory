@@ -51,6 +51,7 @@ def run_single_sim(a_val, tau_val, seed):
         boundary_mode=_CONFIG['boundary_mode'],
         log_steps=_CONFIG['log_steps'],
         log_path=_CONFIG['log_path'],
+        max_ram_bytes=_CONFIG['max_ram_bytes'],
     )
 
     run_metrics, blocks_df = model.run()
@@ -158,6 +159,7 @@ def main():
         'a_ref': a_ref,
         'tau_ref': tau_ref,
         'point_to_group': point_to_group,
+        'max_ram_bytes': 32 * 1024**3,
     }
 
     counter = mp.Value('i', 0)

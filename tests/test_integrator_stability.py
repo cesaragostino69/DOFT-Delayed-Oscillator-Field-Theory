@@ -32,6 +32,7 @@ def test_semiimplicit_integrator_stability(dt_nondim):
         gamma=0.1,
         seed=0,
         dt_nondim=dt_nondim,
+        max_ram_bytes=32 * 1024**3,
     )
 
     # Provide a small perturbation to avoid trivial dynamics

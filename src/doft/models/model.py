@@ -7,8 +7,6 @@ import warnings
 
 from doft.utils.utils import spectral_entropy
 
-MAX_RAM_BYTES = 32 * 1024**3
-
 def compute_energy(Q: np.ndarray, P: np.ndarray) -> float:
     """Return total nondimensional energy of the lattice.
 
@@ -114,6 +112,7 @@ class DOFTModel:
         energy_mode: str = "auto",
         log_steps: bool = False,
         log_path: str | None = None,
+        max_ram_bytes: int = 32 * 1024**3,
     ):
         self.grid_size = grid_size
         self.seed = seed
@@ -168,16 +167,20 @@ class DOFTModel:
         else:
             self.y_states = None
 
+
         bytes_per_slice = grid_size * grid_size * np.dtype(np.float64).itemsize
         memory_used = 2 * bytes_per_slice
         if self.y_states is not None:
             memory_used += self.y_states.shape[0] * bytes_per_slice
-        available_bytes = MAX_RAM_BYTES - memory_used
+        # Cap history buffer based on available RAM
+        self.max_ram_bytes = max_ram_bytes
+        available_bytes = self.max_ram_bytes - memory_used
         self.max_history_steps = max(0, available_bytes // bytes_per_slice)
         if self.history_steps > self.max_history_steps:
             raise MemoryError(
-                "Requested history length exceeds available 32 GB of RAM"
+                "Requested history length exceeds available memory",
             )
+
         self.Q_history = np.zeros(
             (self.history_steps, grid_size, grid_size), dtype=np.float64
         )
@@ -356,7 +359,7 @@ class DOFTModel:
                 required_history = int(math.ceil(self.tau / self.dt))
                 if required_history > self.max_history_steps:
                     raise MemoryError(
-                        "History buffer exceeds 32 GB limit. Aborting simulation."
+                        "History buffer exceeds memory limit. Aborting simulation."
                     )
                 if self.history_steps < required_history:
                     new_history_steps = required_history + 5
@@ -379,7 +382,7 @@ class DOFTModel:
             required_history = int(math.ceil(self.tau / self.dt))
             if required_history > self.max_history_steps:
                 raise MemoryError(
-                    "History buffer exceeds 32 GB limit. Aborting simulation."
+                    "History buffer exceeds memory limit. Aborting simulation."
                 )
             if self.history_steps < required_history:
                 new_history_steps = required_history + 5

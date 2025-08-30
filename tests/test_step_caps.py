@@ -33,6 +33,7 @@ def test_run_respects_step_caps():
         seed=0,
         max_pulse_steps=50,
         max_lpc_steps=60,
+        max_ram_bytes=32 * 1024**3,
     )
 
     # Sanity check: without caps the computed steps would be much larger

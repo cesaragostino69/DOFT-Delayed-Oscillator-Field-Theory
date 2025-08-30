@@ -33,6 +33,7 @@ def test_total_energy_passive(coupling, damping, memory_params):
         seed=0,
         dt_nondim=0.05,
         kernel_params=memory_params,
+        max_ram_bytes=32 * 1024**3,
     )
 
     rng = np.random.default_rng(0)

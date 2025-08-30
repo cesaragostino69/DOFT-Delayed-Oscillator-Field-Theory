@@ -24,6 +24,7 @@ def create_model(seed=0, dt_nondim=0.1):
         gamma=0.1,
         seed=seed,
         dt_nondim=dt_nondim,
+        max_ram_bytes=32 * 1024**3,
     )
 
 

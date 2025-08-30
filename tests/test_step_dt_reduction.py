@@ -21,6 +21,7 @@ def test_dt_reduction_on_nonfinite():
         gamma=-10.0,
         seed=0,
         dt_nondim=0.1,
+        max_ram_bytes=32 * 1024**3,
     )
 
     model.Q = model.rng.normal(0, 0.1, model.Q.shape)
@@ -42,6 +43,7 @@ def test_dt_reduction_on_energy_increase():
         gamma=-0.1,
         seed=0,
         dt_nondim=0.1,
+        max_ram_bytes=32 * 1024**3,
     )
 
     model.Q = model.rng.normal(0, 0.1, model.Q.shape)
@@ -62,6 +64,7 @@ def test_history_resize_after_multiple_halvings():
         gamma=-10.0,
         seed=0,
         dt_nondim=0.1,
+        max_ram_bytes=32 * 1024**3,
     )
 
     # Artificially set a much larger time step to force multiple halvings

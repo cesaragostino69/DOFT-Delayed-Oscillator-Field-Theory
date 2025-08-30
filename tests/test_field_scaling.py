@@ -19,6 +19,7 @@ def test_field_scaling_applied():
         tau_ref=1.0,
         gamma=0.1,
         seed=0,
+        max_ram_bytes=32 * 1024**3,
     )
 
     large_value = model.scale_threshold * 2
