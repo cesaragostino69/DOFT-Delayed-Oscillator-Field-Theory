@@ -82,10 +82,6 @@ class DOFTModel:
         energy_mode: str = "auto",
         log_steps: bool = False,
         log_path: str | None = None,
-<<<<<<< ours
-        max_ram_bytes: int | None = None,
-    ) -> None:
-=======
     ):
         """Create a new model instance.
 
@@ -110,7 +106,6 @@ class DOFTModel:
             Additional configuration options.
         """
 
->>>>>>> theirs
         self.grid_size = grid_size
         self.seed = seed
         self.rng = np.random.default_rng(self.seed)
