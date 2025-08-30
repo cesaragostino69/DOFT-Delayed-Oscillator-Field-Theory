@@ -25,10 +25,10 @@ The dissipative term \(-\gamma P\) **must** affect dynamics. Minimal test: with 
 - Reproducible BLAS/OMP (fixed threads), no *fast-math*.
 - If GPU: disable TF32/cuDNN autotune for reproducibility.
 
-4) **Output format & traceability (required)**
-- `runs.csv` (one row per run).
-- `blocks.csv` (one row per chaos-analysis window).
-- `run_meta.json` (full run metadata).
+4) **Output format & traceability (required)**  
+- `runs.csv` (one row per run).  
+- `blocks.csv` (one row per chaos-analysis window).  
+- `run_meta.json` (full run metadata).  
 - Artifact naming convention:
   `runs/passive/phase1_run_<timestamp>/*.csv|.json|.png` (use `runs/active/` if `gamma < 0`)
 
