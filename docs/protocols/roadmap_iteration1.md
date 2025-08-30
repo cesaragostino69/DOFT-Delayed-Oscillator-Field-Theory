@@ -195,7 +195,7 @@ Files: run_sim.py, model.py, analyze_results.py, utils.py.
 11) Rydberg/QDT and Hawking: no pipelines yet.
 
 ### 10.3 Minimal proposed patches (priority)
-P1 — Equation with gamma (mandatory): in step_euler use P += dt * ( -gamma*P - K*Q + Mterm + xi ). Allow gamma per cell or scalar; log the effective value.
+P1 — Equation with gamma (mandatory): in `_step_imex` use P += dt * ( -gamma*P - K*Q + Mterm + xi ). Allow gamma per cell or scalar; log the effective value.
 P2 — Measurement of emergent c (not from map):
 - Dispersion: excite a plane mode k and fit omega(k) for |k|->0; slope = c_eff, with 95% CI.
 - Front: point delta and measure arrival time radially; c_eff = dist / t in linear regime.

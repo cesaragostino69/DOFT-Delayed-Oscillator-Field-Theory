@@ -50,7 +50,7 @@ def test_total_energy_passive(coupling, damping, memory_params):
     initial_energy = model.last_energy
     energies = [initial_energy]
     for t_idx in range(10):
-        model._step_euler(t_idx)
+        model._step_imex(t_idx)
         e = compute_total_energy(
             model.Q, model.P, model.a_nondim, model.y_states, model.kernel_params
         )

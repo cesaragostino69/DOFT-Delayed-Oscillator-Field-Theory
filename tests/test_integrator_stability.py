@@ -39,7 +39,7 @@ def test_semiimplicit_integrator_stability(dt_nondim):
     model.Q = model.rng.normal(0, 0.1, model.Q.shape)
 
     for t_idx in range(20):
-        model._step_euler(t_idx)
+        model._step_imex(t_idx)
 
     assert np.all(np.isfinite(model.Q))
     assert np.all(np.isfinite(model.P))

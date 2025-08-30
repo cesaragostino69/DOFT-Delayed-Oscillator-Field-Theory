@@ -29,7 +29,7 @@ def test_field_scaling_applied():
     model.last_energy = float(0.5 * np.sum(model.P**2) + 0.5 * np.sum(model.Q**2))
     energy_before = model.last_energy
 
-    model._step_euler(0)
+    model._step_imex(0)
 
     assert model.scale_accum > 1.0
     assert np.linalg.norm(model.Q) <= model.scale_threshold

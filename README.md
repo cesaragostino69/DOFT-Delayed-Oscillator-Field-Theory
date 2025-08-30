@@ -182,7 +182,7 @@ Contracts are strict; CI checks schema on PR.
 We include tests that must pass before trusting any “result”:
 
 1. **Determinism (seeded):** repeated runs with same seed produce same statistics within tolerance.
-2. **Finite outputs:** `step_euler` on CPU produces finite positions/momenta (no NaNs/Infs).
+2. **Finite outputs:** `_step_imex` on CPU produces finite positions/momenta (no NaNs/Infs).
 3. **Self-averaging:** estimate $\bar c$ across blocks $(d=2,4,8,16)$; require slopes consistent with $\beta_h,\beta_c \approx 1$.
 4. **Anisotropy metric:** unique definition $\Delta c / c = \frac{|c_x - c_y|}{(c_x + c_y)/2}$, CI reported.
 5. **Closed vs open LPC:** closed systems keep chaos functional $\mathcal{K}$ stationary (within numeric tolerance); open systems balance flux.

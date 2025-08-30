@@ -52,7 +52,7 @@ def test_all_thresholds_affect_ceff_pulse(monkeypatch):
         self.Q = (dist <= radius).astype(float)
         self.Q_history[t_idx % self.history_steps] = self.Q
 
-    monkeypatch.setattr(DOFTModel, "_step_euler", fake_step)
+    monkeypatch.setattr(DOFTModel, "_step_imex", fake_step)
 
     # Patch slope estimator so each threshold yields a different speed
     slopes = [1.0, 2.0, 4.0]

@@ -289,7 +289,15 @@ class DOFTModel:
             - 4 * field
         )
 
-    def _step_euler(self, t_idx):
+    def _step_imex(self, t_idx):
+        """Advance the state using an IMEX Euler step.
+
+        Linear terms (damping and harmonic restoring force) are treated
+        implicitly, while any non-linear contributions are updated explicitly.
+        This corresponds to a first-order implicit-explicit (IMEX) Euler scheme
+        for the coupled ``(Q, P)`` system.
+        """
+
         Q_prev = self.Q.copy()
         P_prev = self.P.copy()
         energy_prev = self.last_energy
@@ -297,14 +305,20 @@ class DOFTModel:
         while True:
             Q_delayed = self._get_delayed_q_interpolated(t_idx)
 
-            # The equations of motion now use dimensionless parameters
+            # Linear coupling term evaluated explicitly from the delayed field
             K_term = self.a_nondim * self._laplacian(Q_delayed)
-            # Semi-implicit update for P with gamma term treated implicitly
-            # P_new = (P - dt_nondim * Q + dt_nondim * K_term) / (1 + dt_nondim * gamma_nondim)
-            P_new = (
-                self.P - self.dt_nondim * self.Q + self.dt_nondim * K_term
-            ) / (1.0 + self.dt_nondim * self.gamma_nondim)
-            # Leapfrog-style update for Q using the newly updated momentum
+
+            # Placeholder for possible nonlinear contributions (explicit)
+            nonlinear_term = 0.0
+
+            # IMEX update: implicit in the linear -Q and -gamma P terms,
+            # explicit for K_term and nonlinear_term
+            numerator = (
+                self.P
+                + self.dt_nondim * (K_term + nonlinear_term - self.Q)
+            )
+            denom = 1.0 + self.dt_nondim * self.gamma_nondim + self.dt_nondim**2
+            P_new = numerator / denom
             Q_new = self.Q + self.dt_nondim * P_new
 
             # Compute norms and rescale if necessary to avoid overflow
@@ -498,7 +512,7 @@ class DOFTModel:
         }
 
         for t_idx in range(n_steps):
-            self._step_euler(t_idx)
+            self._step_imex(t_idx)
             t_now = t_idx * self.dt
             for theta in thetas:
                 cos_t, sin_t = np.cos(theta), np.sin(theta)
@@ -602,7 +616,7 @@ class DOFTModel:
         center = self.grid_size // 2
         time_series = np.zeros(n_steps)
         for t_idx in range(n_steps):
-            self._step_euler(t_idx)
+            self._step_imex(t_idx)
             time_series[t_idx] = self.Q[center, center]
 
         # STABILITY FIX #4: NUMERICAL GUARD

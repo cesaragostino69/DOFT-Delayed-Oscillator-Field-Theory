@@ -26,7 +26,7 @@ def test_dt_reduction_on_nonfinite():
 
     model.Q = model.rng.normal(0, 0.1, model.Q.shape)
 
-    model._step_euler(0)
+    model._step_imex(0)
 
     assert np.all(np.isfinite(model.Q))
     assert np.all(np.isfinite(model.P))
@@ -49,7 +49,7 @@ def test_dt_reduction_on_energy_increase():
     model.Q = model.rng.normal(0, 0.1, model.Q.shape)
 
     initial_dt = model.dt_nondim
-    model._step_euler(0)
+    model._step_imex(0)
 
     assert model.dt_nondim < initial_dt
 
@@ -78,7 +78,7 @@ def test_history_resize_after_multiple_halvings():
     model.last_energy = model.energy_fn(model.Q, model.P)
 
     initial_dt = model.dt_nondim
-    model._step_euler(0)
+    model._step_imex(0)
 
     assert model.dt_nondim < initial_dt / 2  # ensure multiple halvings occurred
     assert model.history_steps >= math.ceil(model.tau / model.dt)
