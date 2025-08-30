@@ -57,6 +57,8 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
         'log_steps': True,
         'log_path': 'my_logs',
         'lpc_duration_physical': 1.0,
+        'pulse_amplitude': 0.2,
+        'detection_thresholds': [2.0, 4.0],
         'seeds': [0],
         'sweep_groups': {
             'g1': [[1.0, 1.0]],
@@ -74,6 +76,8 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     assert captured['boundary_mode'] == cfg['boundary_mode']
     assert captured['log_steps'] == cfg['log_steps']
     assert captured['log_path'] == cfg['log_path']
+    assert captured['pulse_amplitude'] == cfg['pulse_amplitude']
+    assert captured['detection_thresholds'] == cfg['detection_thresholds']
 
     run_dir = next((tmp_path / 'runs').glob('phase1_run_*'))
     runs_df = pd.read_csv(run_dir / 'runs.csv')
@@ -82,5 +86,5 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
 
     with open(run_dir / 'run_meta.json') as f:
         meta = json.load(f)
-    for field in ['manifest', 'code_version', 'seeds_detailed', 'front_thresholds']:
+    for field in ['manifest', 'code_version', 'seeds_detailed', 'detection_thresholds', 'pulse_amplitude']:
         assert field in meta

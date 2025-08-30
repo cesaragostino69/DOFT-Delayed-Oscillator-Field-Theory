@@ -110,6 +110,8 @@ class DOFTModel:
         max_lpc_steps: int | None = None,
         lpc_duration_physical: float | None = None,
         kernel_params: dict | None = None,
+        pulse_amplitude: float = 0.1,
+        detection_thresholds: list[float] | None = None,
         energy_mode: str = "auto",
         log_steps: bool = False,
         log_path: str | None = None,
@@ -167,6 +169,12 @@ class DOFTModel:
 
         # Keep parameter for compatibility but no longer used to size history buffers
         self.max_ram_bytes = max_ram_bytes
+
+        # Parameters for pulse experiment
+        self.pulse_amplitude = pulse_amplitude
+        self.detection_thresholds = (
+            list(detection_thresholds) if detection_thresholds is not None else [1.0, 3.0, 5.0]
+        )
 
         # Select energy functional
         if energy_mode == "basic":
@@ -391,7 +399,7 @@ class DOFTModel:
         json_path = f"{self.log_path}.json"
         df.to_csv(csv_path, index=False)
         df.to_json(json_path, orient="records")
-    
+
     def _calculate_pulse_metrics(self, n_steps, noise_std: float = 0.0):
         r"""Estimate wave-front speed using multiple noise-relative thresholds.
 
@@ -402,7 +410,7 @@ class DOFTModel:
         noise_std:
             Standard deviation of the synthetic noise added before injecting the
             pulse. The resulting floor :math:`\xi` sets the detection thresholds
-            ``{1σ, 3σ, 5σ}``.
+            according to ``self.detection_thresholds``.
         """
 
         # Reset fields and optional pre-pulse noise
@@ -415,13 +423,15 @@ class DOFTModel:
         # Noise floor and thresholds relative to it
         xi_floor = float(np.std(self.Q))
         xi_floor = max(xi_floor, 1e-12)
-        thresholds = xi_floor * np.array([1.0, 3.0, 5.0])
+        thresholds = xi_floor * np.asarray(self.detection_thresholds, dtype=float)
 
         center = self.grid_size // 2
 
         # Inject Gaussian pulse
         x, y = np.meshgrid(np.arange(self.grid_size), np.arange(self.grid_size))
-        self.Q += 0.1 * np.exp(-((x - center) ** 2 + (y - center) ** 2) / 10.0)
+        self.Q += self.pulse_amplitude * np.exp(
+            -((x - center) ** 2 + (y - center) ** 2) / 10.0
+        )
         # Update stored energy after pulse injection so the stability guard
         # does not interpret the added pulse energy as a spurious increase.
         self.last_energy = self.energy_fn(self.Q, self.P)
@@ -612,4 +622,3 @@ class DOFTModel:
         if self.log_steps:
             self.save_step_log()
         return final_run_metrics, blocks_df
-    

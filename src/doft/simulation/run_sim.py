@@ -53,6 +53,8 @@ def run_single_sim(a_val, tau_val, seed):
         log_path=_CONFIG['log_path'],
         max_ram_bytes=_CONFIG['max_ram_bytes'],
         lpc_duration_physical=_CONFIG.get('lpc_duration_physical'),
+        pulse_amplitude=_CONFIG['pulse_amplitude'],
+        detection_thresholds=_CONFIG['detection_thresholds'],
     )
 
     run_metrics, blocks_df = model.run()
@@ -136,6 +138,8 @@ def main():
     tau_ref = cfg_json.get('tau_ref', 1.0)
     max_ram_bytes = cfg_json.get('max_ram_bytes', 32 * 1024**3)
     lpc_duration_physical = cfg_json.get('lpc_duration_physical')
+    pulse_amplitude = cfg_json.get('pulse_amplitude', 0.1)
+    detection_thresholds = cfg_json.get('detection_thresholds', [1.0, 3.0, 5.0])
 
     # --- Sweep Configuration ---
     simulation_points = []
@@ -188,6 +192,8 @@ def main():
         'point_to_group': point_to_group,
         'max_ram_bytes': max_ram_bytes,
         'lpc_duration_physical': lpc_duration_physical,
+        'pulse_amplitude': pulse_amplitude,
+        'detection_thresholds': detection_thresholds,
     }
 
     counter = mp.Value('i', 0)
@@ -253,7 +259,8 @@ def main():
         'manifest': 'MANIFESTO.md',
         'code_version': code_version,
         'seeds_detailed': [{'seed': s} for s in seeds],
-        'front_thresholds': [1.0, 3.0, 5.0],
+        'pulse_amplitude': pulse_amplitude,
+        'detection_thresholds': detection_thresholds,
     })
     meta_output_path = os.path.join(output_dir, 'run_meta.json')
     with open(meta_output_path, 'w') as f:

@@ -117,7 +117,8 @@ The dissipative term \(-\gamma P\) **must** affect dynamics. Minimal test: with 
   "topology": {"grid": [128,128,128], "bc": "absorbing", "sponge_width": 8},
   "kernel_prony": {"M": 3, "thetas": [t1,t2,t3], "weights": [w1,w2,w3]},
   "seeds": {"global": 123, "init": 456, "noise": 789},
-  "front_thresholds": ["1sigma", "3sigma", "5sigma"],
+  "pulse_amplitude": 0.1,
+  "detection_thresholds": ["1sigma", "3sigma", "5sigma"],
   "fft_params": {"st_grid": [64, 256], "k_fit_tol_pct": 5},
   "windowing": {"len_steps": 2048, "overlap": 0.5, "detrend": "linear"}
 }
