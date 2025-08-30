@@ -1,141 +1,249 @@
-commit 029d1daab31867ec6d1a3fa97005b50df6081014
-Author: cesaragostino <90473152+cesaragostino@users.noreply.github.com>
-Date:   Fri Aug 29 23:25:03 2025 -0300
+# src/doft/simulation/run_sim.py
+import argparse
+import logging
+import pandas as pd
+import numpy as np
+import time
+import json
+import os
+from pathlib import Path
+import subprocess
+import multiprocessing as mp
 
-    update config_phase1 run_sim.py
-    
-    Summary
-    Added a --config argument with a default JSON path, letting simulations load sweep settings from a user-specified file instead of hardcoded values
-    Replaced inline sweep definitions by parsing seeds, sweep groups, and numerical parameters from the JSON configuration file
-    Stored the configuration source and parameters in run_meta.json so runs document their input setup for reproducibility
+from doft.models.model import DOFTModel
 
-diff --git a/configs/config_phase1.json b/configs/config_phase1.json
-index 66c6b9a..07147d5 100644
---- a/configs/config_phase1.json
-+++ b/configs/config_phase1.json
-@@ -1,46 +1,14 @@
- {
--  "grid_size": 128,
--  "gamma": 0.05,
--  "seeds": [101, 102, 103, 104, 105],
--  "sweep_groups": [
--    {
--      "name": "ExperimentA_Pulse_C_Emergence",
--      "experiment_type": "pulse",
--      "a": [
--        {"mean": 1.0, "std": 0.01},
--        {"mean": 1.2, "std": 0.01},
--        {"mean": 1.5, "std": 0.01},
--        {"mean": 1.0, "std": 0.01},
--        {"mean": 1.0, "std": 0.01}
--      ],
--      "tau0": [
--        {"mean": 1.0, "std": 0.01},
--        {"mean": 1.2, "std": 0.01},
--        {"mean": 1.5, "std": 0.01},
--        {"mean": 0.8, "std": 0.01},
--        {"mean": 0.67, "std": 0.01}
--      ]
--    }
--  ],
--  "numerical_params": {
--    "steps": 5000,
--    "dt": 0.002,
--    "dx": 1.0,
--    "log_interval": 10
--  },
--  "physics_params": {
--    "K": 0.3,
--    "xi_amp": 1e-4,
--    "prony_memory": {
--      "weights": [0.5, 0.3, 0.2],
--      "thetas": [0.01, 0.1, 1.0]
--    }
-+  "seeds": [42, 123, 456, 789, 1011],
-+  "sweep_groups": {
-+    "g1": [[1.0, 1.0], [1.2, 1.2], [1.5, 1.5]],
-+    "g2": [[1.0, 1.0], [1.2, 1.0], [1.5, 1.0]],
-+    "g3": [[1.0, 1.0], [1.0, 0.8], [1.0, 0.67]]
-   },
--  "metrics_params": {
--    "windowing": {
--      "len_steps": 2048,
--      "overlap": 0.5,
--      "detrend": "linear"
--    }
-+  "numerical_params": {
-+    "gamma": 0.05,
-+    "grid_size": 100,
-+    "a_ref": 1.0,
-+    "tau_ref": 1.0
-   }
- }
-diff --git a/src/doft/simulation/run_sim.py b/src/doft/simulation/run_sim.py
-index 35e4c61..8df5ad8 100644
---- a/src/doft/simulation/run_sim.py
-+++ b/src/doft/simulation/run_sim.py
-@@ -137,6 +137,15 @@ def main():
-     This version uses the new IMEX/Leapfrog integrator with Prony memory.
-     """
-     parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
-+    default_config = os.environ.get(
-+        "DOFT_CONFIG",
-+        str(Path(__file__).resolve().parents[3] / "configs" / "config_phase1.json"),
-+    )
-+    parser.add_argument(
-+        "--config",
-+        default=default_config,
-+        help="Path to JSON file with sweep configuration",
-+    )
-     parser.add_argument(
-         "--boundary",
-         choices=["periodic", "reflective", "absorbing"],
-@@ -168,6 +177,7 @@ def main():
-     )
-     args = parser.parse_args()
- 
-+<<<<<<< ours
-     env_cfg = _load_env_config()
-     default_cfg = {
-         "gamma": 0.05,
-@@ -261,6 +271,27 @@ def main():
-     a_ref = 1.0
-     tau_ref = 1.0
- >>>>>>> theirs
-+=======
-+    # --- Load Configuration from JSON ---
-+    with open(args.config, "r") as f:
-+        loaded_cfg = json.load(f)
-+
-+    seeds = loaded_cfg.get("seeds", [])
-+    sweep_groups = loaded_cfg.get("sweep_groups", {})
-+    numerical_params = loaded_cfg.get("numerical_params", {})
-+
-+    gamma = numerical_params.get("gamma", 0.0)
-+    grid_size = numerical_params.get("grid_size", 0)
-+    a_ref = numerical_params.get("a_ref", 1.0)
-+    tau_ref = numerical_params.get("tau_ref", 1.0)
-+
-+    simulation_points = []
-+    point_to_group = {}
-+    for gname, pts in sweep_groups.items():
-+        for a_val, tau_val in pts:
-+            simulation_points.append((a_val, tau_val))
-+            point_to_group[(a_val, tau_val)] = gname
-+>>>>>>> theirs
- 
-     # --- Create Unique Output Directory ---
-     base_run_dir = 'runs'
-@@ -344,6 +375,12 @@ def main():
-         'total_runs_in_sweep': total_sims,
-         'simulation_points': simulation_points,
-         'seeds_used': seeds,
-+        'config_source': args.config,
-+        'config_params': {
-+            'seeds': seeds,
-+            'sweep_groups': sweep_groups,
-+            'numerical_params': numerical_params,
-+        },
-         'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
-         'sweep_groups': sweep_groups,
-         'config_file': args.config,
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
+
+# Globals for worker processes
+_CONFIG = {}
+_RESULTS = None
+_COUNTER = None
+_TOTAL = 0
+
+
+def init_worker(config, results_list, counter, total):
+    """Initializer for worker processes to set shared state."""
+    global _CONFIG, _RESULTS, _COUNTER, _TOTAL
+    _CONFIG = config
+    _RESULTS = results_list
+    _COUNTER = counter
+    _TOTAL = total
+
+
+def run_single_sim(a_val, tau_val, seed):
+    """Run a single simulation and append results to the shared list."""
+    with _COUNTER.get_lock():
+        _COUNTER.value += 1
+        run_idx = _COUNTER.value
+
+    run_id = f"run_{int(time.time())}_{run_idx}"
+    print(f"[{run_idx}/{_TOTAL}] Running sim: a={a_val}, τ={tau_val}, seed={seed}")
+
+    model = DOFTModel(
+        grid_size=_CONFIG['grid_size'],
+        a=a_val,
+        tau=tau_val,
+        a_ref=_CONFIG['a_ref'],
+        tau_ref=_CONFIG['tau_ref'],
+        gamma=_CONFIG['gamma'],
+        seed=seed,
+        boundary_mode=_CONFIG['boundary_mode'],
+        log_steps=_CONFIG['log_steps'],
+        log_path=_CONFIG['log_path'],
+    )
+
+    run_metrics, blocks_df = model.run()
+    logger.info(
+        "run_id=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
+        "C-2: var_c_over_c2=%s anisotropy_max_pct=%s "
+        "C-3: lpc_ok_frac=%s lpc_vcount=%s",
+        run_id,
+        run_metrics.get('ceff_pulse'),
+        run_metrics.get('ceff_pulse_ic95_lo'),
+        run_metrics.get('ceff_pulse_ic95_hi'),
+        run_metrics.get('var_c_over_c2'),
+        run_metrics.get('anisotropy_max_pct'),
+        run_metrics.get('lpc_ok_frac'),
+        run_metrics.get('lpc_vcount'),
+    )
+
+    run_metrics['run_id'] = run_id
+    run_metrics['seed'] = seed
+    run_metrics['a_mean'] = a_val
+    run_metrics['tau_mean'] = tau_val
+    run_metrics['gamma'] = _CONFIG['gamma']
+    run_metrics['param_group'] = _CONFIG['point_to_group'].get((a_val, tau_val), 'unknown')
+    run_metrics['lorentz_window'] = 'NA'
+
+    if blocks_df is not None and not blocks_df.empty:
+        blocks_df['run_id'] = run_id
+        if 'block_skipped' in blocks_df.columns:
+            blocks_df['block_skipped'] = blocks_df['block_skipped'].astype(int)
+
+    _RESULTS.append((run_metrics, blocks_df))
+
+def main():
+    """
+    Main orchestrator for the DOFT Phase 1 counter-trial.
+    This version incorporates numerical stability fixes based on audit feedback.
+    """
+    parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
+    default_config = os.environ.get(
+        "DOFT_CONFIG",
+        str(Path(__file__).resolve().parents[3] / "configs" / "config_phase1.json"),
+    )
+    parser.add_argument(
+        "--config",
+        default=default_config,
+        help="Path to JSON file with sweep configuration",
+    )
+    parser.add_argument(
+        "--boundary",
+        choices=["periodic", "reflective", "absorbing"],
+        default="periodic",
+        help="Boundary condition for lattice interactions",
+    )
+    parser.add_argument(
+        "--log-steps",
+        action="store_true",
+        help="Persist per-step diagnostic metrics",
+    )
+    parser.add_argument(
+        "--log-path",
+        default=None,
+        help="Prefix path for step log output files",
+    )
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run simulations in parallel using multiprocessing",
+    )
+    args = parser.parse_args()
+
+    # --- Load Configuration from JSON ---
+    with open(args.config, "r") as f:
+        loaded_cfg = json.load(f)
+
+    seeds = loaded_cfg.get("seeds", [])
+    sweep_groups = loaded_cfg.get("sweep_groups", {})
+    numerical_params = loaded_cfg.get("numerical_params", {})
+
+    gamma = numerical_params.get("gamma", 0.0)
+    grid_size = numerical_params.get("grid_size", 0)
+    a_ref = numerical_params.get("a_ref", 1.0)
+    tau_ref = numerical_params.get("tau_ref", 1.0)
+
+    simulation_points = []
+    point_to_group = {}
+    for gname, pts in sweep_groups.items():
+        for a_val, tau_val in pts:
+            simulation_points.append((a_val, tau_val))
+            point_to_group[(a_val, tau_val)] = gname
+
+    # --- Create Unique Output Directory ---
+    base_run_dir = 'runs'
+    os.makedirs(base_run_dir, exist_ok=True)
+
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    output_dir = os.path.join(base_run_dir, f'phase1_run_{timestamp}')
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"📁 Saving results to: {output_dir}")
+
+    # --- Simulation Execution ---
+    all_runs_data = []
+    all_blocks_data = []
+
+    print(f"🚀 Starting DOFT Phase-1 Simulation Sweep across {len(simulation_points)} points...")
+
+    total_sims = len(simulation_points) * len(seeds)
+
+    config = {
+        'gamma': gamma,
+        'grid_size': grid_size,
+        'boundary_mode': args.boundary,
+        'log_steps': args.log_steps,
+        'log_path': args.log_path,
+        'a_ref': a_ref,
+        'tau_ref': tau_ref,
+        'point_to_group': point_to_group,
+    }
+
+    counter = mp.Value('i', 0)
+    combos = [(a, t, s) for (a, t) in simulation_points for s in seeds]
+
+    if args.parallel:
+        with mp.Manager() as manager:
+            results_list = manager.list()
+            with mp.Pool(initializer=init_worker, initargs=(config, results_list, counter, total_sims)) as pool:
+                pool.starmap(run_single_sim, combos)
+            results = list(results_list)
+    else:
+        results = []
+        init_worker(config, results, counter, total_sims)
+        for args_tuple in combos:
+            run_single_sim(*args_tuple)
+        results = list(results)
+
+    for run_metrics, blocks_df in results:
+        all_runs_data.append(run_metrics)
+        if blocks_df is not None and not blocks_df.empty:
+            all_blocks_data.append(blocks_df)
+
+    print(f"\n✅ Simulation sweep finished. Consolidating and writing results to {output_dir}...")
+
+    runs_df = pd.DataFrame(all_runs_data)
+    runs_output_path = os.path.join(output_dir, 'runs.csv')
+    runs_df.to_csv(runs_output_path, index=False)
+    print(f"--> Wrote {len(runs_df)} rows to {runs_output_path}")
+
+    if all_blocks_data:
+        blocks_df_final = pd.concat(all_blocks_data, ignore_index=True)
+        blocks_output_path = os.path.join(output_dir, 'blocks.csv')
+        blocks_df_final.to_csv(blocks_output_path, index=False)
+        print(f"--> Wrote {len(blocks_df_final)} rows to {blocks_output_path}")
+    else:
+        print("--> No block data generated for blocks.csv.")
+
+    meta_data = {
+        'run_directory': f'phase1_run_{timestamp}',
+        'timestamp_utc': time.asctime(time.gmtime()),
+        'total_runs_in_sweep': total_sims,
+        'simulation_points': simulation_points,
+        'seeds_used': seeds,
+        'config_source': args.config,
+        'config_params': {
+            'seeds': seeds,
+            'sweep_groups': sweep_groups,
+            'numerical_params': numerical_params,
+        },
+        'fixed_params': {'gamma': gamma, 'grid_size': grid_size},
+        'stability_params': {
+            'dt_logic': 'min(0.02, 0.1, tau_nondim/50, 0.1/(gamma_nondim + |a_nondim| + 1))',
+            'a_ref': a_ref,
+            'tau_ref': tau_ref,
+            'delay_interpolation': True,
+        },
+    }
+
+    repo_root = Path(__file__).resolve().parents[2]
+    try:
+        code_version = subprocess.check_output([
+            'git', 'rev-parse', 'HEAD'
+        ], cwd=repo_root).decode().strip()
+    except Exception:
+        code_version = 'unknown'
+
+    meta_data.update({
+        'manifest': 'MANIFESTO.md',
+        'code_version': code_version,
+        'seeds_detailed': [{'seed': s} for s in seeds],
+        'front_thresholds': [1.0, 3.0, 5.0],
+    })
+    meta_output_path = os.path.join(output_dir, 'run_meta.json')
+    with open(meta_output_path, 'w') as f:
+        json.dump(meta_data, f, indent=4)
+    print(f"--> Wrote metadata to {meta_output_path}")
+
+if __name__ == "__main__":
+    main()
