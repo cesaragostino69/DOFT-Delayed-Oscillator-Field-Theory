@@ -42,6 +42,21 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
             return metrics, df
 
     monkeypatch.setattr(run_sim, 'DOFTModel', DummyModel)
+
+    cfg = {
+        'a_ref': 1.0,
+        'tau_ref': 1.0,
+        'gamma': 0.05,
+        'grid_size': 4,
+        'boundary_mode': 'periodic',
+        'seeds': [0],
+        'sweep_groups': [
+            {'name': 'g1', 'points': [[1.0, 1.0]]}
+        ],
+    }
+    config_path = tmp_path / 'config.json'
+    config_path.write_text(json.dumps(cfg))
+    monkeypatch.setenv('DOFT_CONFIG', str(config_path))
     monkeypatch.setattr(sys, 'argv', ['run_sim'])
     run_sim.main()
 

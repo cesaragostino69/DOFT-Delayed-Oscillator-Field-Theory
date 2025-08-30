@@ -92,6 +92,10 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Run DOFT Phase-1 Simulation Sweep.")
     parser.add_argument(
+        "--config",
+        help="Path to JSON configuration file. Overrides command line defaults.",
+    )
+    parser.add_argument(
         "--boundary",
         choices=["periodic", "reflective", "absorbing"],
         default="periodic",
@@ -114,25 +118,45 @@ def main():
     )
     args = parser.parse_args()
 
+    # --- Load Configuration ---
+    config_path = args.config or os.environ.get('DOFT_CONFIG')
+    cfg_json = {}
+    if config_path and os.path.exists(config_path):
+        with open(config_path) as f:
+            cfg_json = json.load(f)
+
+    # general parameters with defaults
+    seeds = cfg_json.get('seeds', [42, 123, 456, 789, 1011])
+    gamma = cfg_json.get('gamma', 0.05)
+    grid_size = cfg_json.get('grid_size', 100)
+    boundary_mode = cfg_json.get('boundary_mode', args.boundary)
+    log_steps = cfg_json.get('log_steps', args.log_steps)
+    log_path = cfg_json.get('log_path', args.log_path)
+    a_ref = cfg_json.get('a_ref', 1.0)
+    tau_ref = cfg_json.get('tau_ref', 1.0)
+    max_ram_bytes = cfg_json.get('max_ram_bytes', 32 * 1024**3)
+    lpc_duration_physical = cfg_json.get('lpc_duration_physical')
+
     # --- Sweep Configuration ---
-    group1 = [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)]
-    group2 = [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)]
-    group3 = [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)]
-    simulation_points = group1 + group2 + group3
-
+    simulation_points = []
     point_to_group = {}
-    for pt in group1: point_to_group[pt] = 'g1'
-    for pt in group2: point_to_group[pt] = 'g2'
-    for pt in group3: point_to_group[pt] = 'g3'
-
-    seeds = [42, 123, 456, 789, 1011]
-    gamma = 0.05
-    grid_size = 100
-
-    # STABILITY FIX: Define reference parameters for nondimensionalization.
-    # We use the central point of the sweep as the reference scale.
-    a_ref = 1.0
-    tau_ref = 1.0
+    sweep_groups = cfg_json.get('sweep_groups')
+    if sweep_groups:
+        for group in sweep_groups:
+            name = group.get('name', 'group')
+            for pt in group.get('points', []):
+                a_val, tau_val = pt
+                pt_t = (a_val, tau_val)
+                simulation_points.append(pt_t)
+                point_to_group[pt_t] = name
+    else:
+        group1 = [(1.0, 1.0), (1.2, 1.2), (1.5, 1.5)]
+        group2 = [(1.0, 1.0), (1.2, 1.0), (1.5, 1.0)]
+        group3 = [(1.0, 1.0), (1.0, 0.8), (1.0, 0.67)]
+        simulation_points = group1 + group2 + group3
+        for pt in group1: point_to_group[pt] = 'g1'
+        for pt in group2: point_to_group[pt] = 'g2'
+        for pt in group3: point_to_group[pt] = 'g3'
 
     # --- Create Unique Output Directory ---
     base_run_dir = 'runs'
@@ -154,21 +178,15 @@ def main():
     config = {
         'gamma': gamma,
         'grid_size': grid_size,
-        'boundary_mode': args.boundary,
-        'log_steps': args.log_steps,
-        'log_path': args.log_path,
+        'boundary_mode': boundary_mode,
+        'log_steps': log_steps,
+        'log_path': log_path,
         'a_ref': a_ref,
         'tau_ref': tau_ref,
         'point_to_group': point_to_group,
-        'max_ram_bytes': 32 * 1024**3,
-        'lpc_duration_physical': None,
+        'max_ram_bytes': max_ram_bytes,
+        'lpc_duration_physical': lpc_duration_physical,
     }
-
-    config_path = os.environ.get('DOFT_CONFIG')
-    if config_path and os.path.exists(config_path):
-        with open(config_path) as f:
-            cfg_json = json.load(f)
-            config['lpc_duration_physical'] = cfg_json.get('lpc_duration_physical')
 
     counter = mp.Value('i', 0)
     combos = [(a, t, s) for (a, t) in simulation_points for s in seeds]
