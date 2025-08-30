@@ -83,7 +83,7 @@ This creates `my_step_log.csv` and `my_step_log.json` with detailed step data.
 
 Step 4: Results
 
-Upon completion, the script will create a new directory inside the runs folder. The directory name will include the date and time of the run, for example: runs/phase1_run_20250825_183000.
+Upon completion, the script will create a new directory inside the runs folder. If `gamma ≥ 0` the path begins with `runs/passive/`; otherwise it begins with `runs/active/`. The directory name will include the date and time of the run, for example: `runs/passive/phase1_run_20250825_183000`.
 
 Inside that folder, you will find the simulation artifacts (runs.csv, blocks.csv, etc.), ready for analysis.
 

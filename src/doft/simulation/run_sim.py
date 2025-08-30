@@ -169,7 +169,8 @@ def main():
                 point_to_group[pt] = name
 
     # --- Create Unique Output Directory ---
-    base_run_dir = 'runs'
+    mode_dir = 'passive' if gamma >= 0 else 'active'
+    base_run_dir = os.path.join('runs', mode_dir)
     os.makedirs(base_run_dir, exist_ok=True)
 
     timestamp = time.strftime('%Y%m%d_%H%M%S')
@@ -239,7 +240,7 @@ def main():
         print("--> No block data generated for blocks.csv.")
 
     meta_data = {
-        'run_directory': f'phase1_run_{timestamp}',
+        'run_directory': os.path.join(mode_dir, f'phase1_run_{timestamp}'),
         'timestamp_utc': time.asctime(time.gmtime()),
         'total_runs_in_sweep': total_sims,
         'simulation_points': simulation_points,

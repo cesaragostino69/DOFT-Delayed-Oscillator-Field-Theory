@@ -53,6 +53,5 @@ def test_run_sim_respects_lpc_duration(tmp_path, monkeypatch):
     assert captured['lpc_duration_physical'] == cfg['lpc_duration_physical']
 
     # Ensure results were written to disk
-    run_dir = next((tmp_path / 'runs').glob('phase1_run_*'))
+    run_dir = next((tmp_path / 'runs' / 'passive').glob('phase1_run_*'))
     assert (run_dir / 'runs.csv').exists()
-    
