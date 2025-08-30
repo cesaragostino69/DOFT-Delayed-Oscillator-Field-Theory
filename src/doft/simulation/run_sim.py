@@ -55,6 +55,8 @@ def run_single_sim(a_val, tau_val, seed):
         lpc_duration_physical=_CONFIG.get('lpc_duration_physical'),
         pulse_amplitude=_CONFIG['pulse_amplitude'],
         detection_thresholds=_CONFIG['detection_thresholds'],
+        max_pulse_steps=_CONFIG.get('max_pulse_steps'),
+        max_lpc_steps=_CONFIG.get('max_lpc_steps'),
     )
 
     run_metrics, blocks_df = model.run()
@@ -140,6 +142,8 @@ def main():
     lpc_duration_physical = cfg_json.get('lpc_duration_physical')
     pulse_amplitude = cfg_json.get('pulse_amplitude', 0.1)
     detection_thresholds = cfg_json.get('detection_thresholds', [1.0, 3.0, 5.0])
+    max_pulse_steps = cfg_json.get('max_pulse_steps')
+    max_lpc_steps = cfg_json.get('max_lpc_steps')
 
     # --- Sweep Configuration ---
     simulation_points = []
@@ -194,6 +198,8 @@ def main():
         'lpc_duration_physical': lpc_duration_physical,
         'pulse_amplitude': pulse_amplitude,
         'detection_thresholds': detection_thresholds,
+        'max_pulse_steps': max_pulse_steps,
+        'max_lpc_steps': max_lpc_steps,
     }
 
     counter = mp.Value('i', 0)

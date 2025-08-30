@@ -1,0 +1,21 @@
+{
+  "grid_size": 16,
+  "gamma": 0.05,
+  "pulse_amplitude": 0.05,
+  "detection_thresholds": [1.0],
+  "seeds": [0],
+  "sweep_groups": {
+    "smoke": [[1.0, 1.0]]
+  },
+  "max_pulse_steps": 50,
+  "max_lpc_steps": 50,
+  "lpc_duration_physical": 0.1,
+  "a_ref": 1.0,
+  "tau_ref": 1.0,
+  "K": 0.3,
+  "xi_amp": 1e-4,
+  "prony_memory": {
+    "weights": [0.5, 0.3, 0.2],
+    "thetas": [0.01, 0.1, 1.0]
+  }
+}

@@ -153,6 +153,13 @@ The helper scripts read parameters from JSON files under `configs/`.
   bash scripts/run_quick.sh    # uses configs/config_chaos.json
   ```
 
+- **Smoke test**
+
+  ```bash
+  DOFT_CONFIG=configs/smoke_test.json bash scripts/run_quick.sh
+  ```
+  Runs a tiny 16×16 grid for a handful of steps to verify the pipeline.
+
 Each run writes results to a timestamped directory under `runs/`.
 
 ### Self-averaging report
