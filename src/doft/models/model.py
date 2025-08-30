@@ -353,6 +353,40 @@ class DOFTModel:
             self.dt = self.dt_nondim * self.tau_ref
 
 
+    def _step_leapfrog(self, t_idx: int):
+        """Advance the state using a Leapfrog (Störmer-Verlet) step.
+
+        This explicit, time-reversible scheme is intended for "checks"
+        in the conservative case with **no** damping or memory effects.
+        It requires ``gamma = 0`` and ``kernel_params`` set to ``None``.
+
+        Parameters
+        ----------
+        t_idx:
+            Current step index (unused, kept for signature parity).
+        """
+
+        if self.gamma_nondim != 0.0:
+            raise ValueError("Leapfrog integrator requires gamma = 0")
+        if self.y_states is not None:
+            raise ValueError("Leapfrog integrator incompatible with memory terms")
+
+        def force(field: np.ndarray) -> np.ndarray:
+            return self.a_nondim * self._laplacian(field) - field
+
+        F_n = force(self.Q)
+        P_half = self.P + 0.5 * self.dt_nondim * F_n
+        Q_new = self.Q + self.dt_nondim * P_half
+        F_new = force(Q_new)
+        P_new = P_half + 0.5 * self.dt_nondim * F_new
+
+        self.Q = Q_new
+        self.P = P_new
+        self.last_energy = self.energy_fn(self.Q, self.P)
+        self.energy_log.append(self.last_energy)
+        if self.log_steps:
+            self._log_step(t_idx)
+
     def _log_step(self, t_idx: int):
         """Store per-step energy and LPC metrics if logging is enabled."""
 
