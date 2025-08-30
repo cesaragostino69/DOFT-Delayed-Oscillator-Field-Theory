@@ -1,4 +1,5 @@
 import sys
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -23,6 +24,7 @@ class RecordingModel(DOFTModel):
 
 def test_run_respects_step_caps():
     # Choose parameters that make dt extremely small so computed steps are huge
+    lpc_duration = 0.012
     model = RecordingModel(
         grid_size=4,
         a=1.0,
@@ -32,15 +34,17 @@ def test_run_respects_step_caps():
         gamma=0.1,
         seed=0,
         max_pulse_steps=50,
-        max_lpc_steps=60,
+        lpc_duration_physical=lpc_duration,
     )
+
+    expected_lpc_steps = int(math.ceil(lpc_duration / model.dt))
 
     # Sanity check: without caps the computed steps would be much larger
     assert int(3000 * (0.1 / model.dt)) > 50
-    assert int(30000 * (0.1 / model.dt)) > 60
+    assert int(30000 * (0.1 / model.dt)) > expected_lpc_steps
 
     model.run()
 
     assert model.recorded_pulse_steps == 50
-    assert model.recorded_lpc_steps == 60
+    assert model.recorded_lpc_steps == expected_lpc_steps
     
