@@ -252,6 +252,15 @@ def main():
         'interp_order': interp_order,
     }
 
+    # Remove optional keys with None values to keep configuration clean
+    config = {k: v for k, v in config.items() if v is not None}
+
+    # Ensure required tau parameters are present exactly once
+    required_tau_keys = {'tau_model', 'epsilon_tau', 'eta'}
+    missing_tau = required_tau_keys - config.keys()
+    if missing_tau:
+        raise KeyError(f"Missing required config keys: {missing_tau}")
+
     counter = mp.Value('i', 0)
     combos = [(a, t, s) for (a, t) in simulation_points for s in seeds]
 
