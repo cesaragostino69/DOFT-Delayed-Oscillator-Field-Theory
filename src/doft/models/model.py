@@ -174,6 +174,8 @@ class DOFTModel:
         self.epsilon_tau = epsilon_tau
         self.eta_slew = eta_slew
         self.max_delta_d = max_delta_d
+        if not 3 <= interp_order <= 5:
+            raise ValueError("interp_order must be between 3 and 5")
         self.interp_order = interp_order
         self.dt_max_delta_d_exceeded_count = 0
 
@@ -248,6 +250,8 @@ class DOFTModel:
         self.scale_threshold = 1e6
         self.scale_accum = 1.0
         self.scale_log: list[float] = []
+        # Track maximum change in delay per step
+        self.delta_d_log: list[float] = []
 
         # Optional caps for expensive diagnostic runs
         self.max_pulse_steps = max_pulse_steps
@@ -326,48 +330,56 @@ class DOFTModel:
 
         return tau
 
-    def _get_delayed_q_interpolated(self, t_idx: int | None = None):
+    def _get_delayed_q_interpolated(self, tau: np.ndarray, t_idx: int | None = None):
         """Return delayed field along with delay-step diagnostics.
 
-        When dynamic delays are disabled, this simply returns the auxiliary
-        ``Q_delay`` array and zero diagnostics. With dynamic delays enabled,
-        the method performs a fractional read from the per-node ring buffer
-        using a 3rd-order Lagrange interpolator.
+        Parameters
+        ----------
+        tau:
+            Array ``tau_ij(t)`` with the per-cell delay expressed in the same
+            nondimensional units as ``dt``.
+
+        When dynamic delays are disabled this simply returns ``Q_delay`` and
+        zero diagnostics. Otherwise a fractional read from the ring buffer is
+        performed using a configurable Lagrange interpolator of order
+        ``self.interp_order`` (3--5).
 
         Returns
         -------
         tuple
             ``(field, delay_steps, delta_d)`` where ``field`` is the delayed
-            field, ``delay_steps`` the delay expressed in units of ``dt`` and
-            ``delta_d`` the change in ``delay_steps`` since the previous call.
+            field, ``delay_steps`` the delay in units of ``dt`` (per cell) and
+            ``delta_d`` the maximum absolute change since the previous call.
         """
 
         if not self.tau_dynamic_on or self.q_ring is None:
             return self.Q_delay, self._prev_delay_steps, 0.0
 
-        tau = self._compute_dynamic_tau()
         delay_steps = (
             tau / self.dt_nondim if self.dt_nondim > 0 else np.zeros_like(tau)
         )
         idx_float = (self._ring_index - delay_steps) % self.ring_buffer_len
         i0 = np.floor(idx_float).astype(int)
         frac = idx_float - i0
-        idxs = np.stack(
-            [
-                (i0 - 1) % self.ring_buffer_len,
-                i0 % self.ring_buffer_len,
-                (i0 + 1) % self.ring_buffer_len,
-                (i0 + 2) % self.ring_buffer_len,
-            ]
-        )
+
+        order = int(self.interp_order)
+        if order < 3 or order > 5:
+            raise ValueError("interp_order must be between 3 and 5")
+        offsets = np.arange(-order // 2, -order // 2 + order + 1)
+        idxs = (i0[None, ...] + offsets[:, None, None]) % self.ring_buffer_len
         samples = np.take(self.q_ring, idxs, axis=0, mode="wrap")
-        f = frac
-        w0 = -f * (f - 1) * (f - 2) / 6.0
-        w1 = (f + 1) * (f - 1) * (f - 2) / 2.0
-        w2 = -(f + 1) * f * (f - 2) / 2.0
-        w3 = (f + 1) * f * (f - 1) / 6.0
-        field = w0 * samples[0] + w1 * samples[1] + w2 * samples[2] + w3 * samples[3]
-        delta_d = float(np.max(np.abs(delay_steps - self._prev_delay_steps)))
+
+        weights = np.ones_like(samples, dtype=np.float64)
+        for j, xj in enumerate(offsets):
+            for m, xm in enumerate(offsets):
+                if m == j:
+                    continue
+                weights[j] *= (frac - xm) / (xj - xm)
+        field = np.sum(weights * samples, axis=0)
+
+        abs_delta = np.abs(delay_steps - self._prev_delay_steps)
+        delta_d = float(np.max(abs_delta))
+        self.delta_d_log.append(delta_d)
         return field, delay_steps, delta_d
 
     def _laplacian(self, field: np.ndarray, mode: str | None = None) -> np.ndarray:
@@ -422,7 +434,26 @@ class DOFTModel:
         energy_prev = self.last_energy
 
         while True:
-            Q_delayed = self._get_delayed_q_interpolated(t_idx)
+            tau = (
+                self._compute_dynamic_tau()
+                if self.tau_dynamic_on
+                else np.full_like(self.Q, self.tau_nondim)
+            )
+            Q_delayed, delay_steps, delta_d = self._get_delayed_q_interpolated(tau, t_idx)
+
+            if self.tau_dynamic_on and delta_d >= self.max_delta_d:
+                self.dt_max_delta_d_exceeded_count += 1
+                new_dt = self.dt_nondim * 0.5
+                if new_dt < self.min_dt_nondim:
+                    print(
+                        f"ERROR: |Δd|={delta_d} exceeded and minimum dt reached. Aborting step."
+                    )
+                    self.dt_nondim = self.min_dt_nondim
+                    self.dt = self.dt_nondim * self.tau_ref
+                    break
+                self.dt_nondim = new_dt
+                self.dt = self.dt_nondim * self.tau_ref
+                continue
 
             # Linear coupling term evaluated explicitly from the delayed field
             K_term = self.a_nondim * self._laplacian(Q_delayed)
