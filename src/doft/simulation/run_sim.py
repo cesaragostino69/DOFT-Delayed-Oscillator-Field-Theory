@@ -62,11 +62,8 @@ def run_single_sim(a_val, tau_val, seed):
         tau_dynamic=_CONFIG.get('tau_dynamic_on', False),
         alpha_delay=_CONFIG.get('alpha_delay', 0.0),
         lambda_z=_CONFIG.get('lambda_z', 0.0),
-<<<<<<< ours
         epsilon_tau=_CONFIG.get('epsilon_tau', 0.1),
-        eta_slew=_CONFIG.get('eta', 0.1),
-=======
->>>>>>> theirs
+        eta=_CONFIG.get('eta', 0.1),
         max_delta_d=_CONFIG.get('max_delta_d', 0.25),
         interp_order=_CONFIG.get('interp_order', 3),
     )
@@ -74,21 +71,14 @@ def run_single_sim(a_val, tau_val, seed):
     run_metrics, blocks_df = model.run()
     logger.info(
         "run_id=%s tau_dynamic_on=%s alpha_delay=%s lambda_z=%s dt_max_delta_d_exceeded_count=%s "
-<<<<<<< ours
         "delta_d_rate=%s interp_order=%s ring_buffer_len=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
-=======
-        "interp_order=%s ring_buffer_len=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
->>>>>>> theirs
         "C-2: var_c_over_c2=%s anisotropy_max_pct=%s C-3: lpc_ok_frac=%s lpc_vcount=%s",
         run_id,
         run_metrics.get('tau_dynamic_on'),
         run_metrics.get('alpha_delay'),
         run_metrics.get('lambda_z'),
         run_metrics.get('dt_max_delta_d_exceeded_count'),
-<<<<<<< ours
         run_metrics.get('delta_d_rate'),
-=======
->>>>>>> theirs
         run_metrics.get('interp_order'),
         run_metrics.get('ring_buffer_len'),
         run_metrics.get('ceff_pulse'),
@@ -174,7 +164,6 @@ def main():
     tau_dynamic_on = cfg_json.get('tau_dynamic_on', False)
     alpha_delay = cfg_json.get('alpha_delay', 0.0)
     lambda_z = cfg_json.get('lambda_z', 0.0)
-<<<<<<< ours
     tau_model = cfg_json.get('tau_model', 'direct')
     epsilon_tau = cfg_json.get('epsilon_tau', 0.1)
     eta = cfg_json.get('eta', 0.1)
@@ -182,8 +171,6 @@ def main():
         raise ValueError('epsilon_tau must be between 0.05 and 0.2')
     if not 0.05 <= eta <= 0.1:
         raise ValueError('eta must be between 0.05 and 0.1')
-=======
->>>>>>> theirs
     max_delta_d = cfg_json.get('max_delta_d', 0.25)
     interp_order = cfg_json.get('interp_order', 3)
 
@@ -255,11 +242,6 @@ def main():
         'max_lpc_steps': max_lpc_steps,
         'kernel_params': kernel_params,
         'integrator': integrator,
-        'tau_dynamic_on': tau_dynamic_on,
-        'alpha_delay': alpha_delay,
-        'lambda_z': lambda_z,
-        'max_delta_d': max_delta_d,
-        'interp_order': interp_order,
         'tau_dynamic_on': tau_dynamic_on,
         'alpha_delay': alpha_delay,
         'lambda_z': lambda_z,
