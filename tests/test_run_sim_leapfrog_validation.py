@@ -15,8 +15,6 @@ def test_run_sim_leapfrog_validation(tmp_path, monkeypatch):
     cfg = {
         'gamma': 0.1,
         'integrator': 'Leapfrog',
-        'seeds': [0],
-        'sweep_groups': {'g1': [[1.0, 1.0]]},
     }
     config_path = tmp_path / 'config.json'
     config_path.write_text(json.dumps(cfg))
@@ -25,4 +23,3 @@ def test_run_sim_leapfrog_validation(tmp_path, monkeypatch):
 
     with pytest.raises(ValueError):
         run_sim.main()
-        
