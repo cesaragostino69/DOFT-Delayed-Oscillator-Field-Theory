@@ -63,6 +63,7 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
         'sweep_groups': {
             'g1': [[1.0, 1.0]],
         },
+        'integrator': 'IMEX',
     }
     config_path = tmp_path / 'config.json'
     config_path.write_text(json.dumps(cfg))
@@ -78,6 +79,7 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     assert captured['log_path'] == cfg['log_path']
     assert captured['pulse_amplitude'] == cfg['pulse_amplitude']
     assert captured['detection_thresholds'] == cfg['detection_thresholds']
+    assert captured['integrator'] == 'IMEX'
 
     run_dir = next((tmp_path / 'runs' / 'passive').glob('phase1_run_*'))
     runs_df = pd.read_csv(run_dir / 'runs.csv')
