@@ -1,0 +1,7 @@
+{
+  "description": "Configuration used only for energy conservation tests.",
+  "gamma": 0.0,
+  "numerical_params": {
+    "integrator": "Leapfrog"
+  }
+}
