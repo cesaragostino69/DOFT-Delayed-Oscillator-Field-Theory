@@ -59,6 +59,13 @@ def run_single_sim(a_val, tau_val, seed):
         max_lpc_steps=_CONFIG.get('max_lpc_steps'),
         kernel_params=_CONFIG.get('kernel_params'),
         integrator=_CONFIG.get('integrator'),
+        tau_dynamic=_CONFIG.get('tau_dynamic_on', False),
+        alpha_delay=_CONFIG.get('alpha_delay', 0.0),
+        lambda_z=_CONFIG.get('lambda_z', 0.0),
+        epsilon_tau=_CONFIG.get('epsilon_tau', 0.1),
+        eta_slew=_CONFIG.get('eta', 0.1),
+        max_delta_d=_CONFIG.get('max_delta_d', 0.25),
+        interp_order=_CONFIG.get('interp_order', 3),
     )
 
     run_metrics, blocks_df = model.run()
@@ -154,6 +161,18 @@ def main():
     max_pulse_steps = cfg_json.get('max_pulse_steps')
     max_lpc_steps = cfg_json.get('max_lpc_steps')
     kernel_params = cfg_json.get('kernel_params')
+    tau_dynamic_on = cfg_json.get('tau_dynamic_on', False)
+    alpha_delay = cfg_json.get('alpha_delay', 0.0)
+    lambda_z = cfg_json.get('lambda_z', 0.0)
+    tau_model = cfg_json.get('tau_model', 'direct')
+    epsilon_tau = cfg_json.get('epsilon_tau', 0.1)
+    eta = cfg_json.get('eta', 0.1)
+    if not 0.05 <= epsilon_tau <= 0.2:
+        raise ValueError('epsilon_tau must be between 0.05 and 0.2')
+    if not 0.05 <= eta <= 0.1:
+        raise ValueError('eta must be between 0.05 and 0.1')
+    max_delta_d = cfg_json.get('max_delta_d', 0.25)
+    interp_order = cfg_json.get('interp_order', 3)
 
     # Numerical parameters
     numerical_params = cfg_json.get('numerical_params', {})
@@ -223,6 +242,14 @@ def main():
         'max_lpc_steps': max_lpc_steps,
         'kernel_params': kernel_params,
         'integrator': integrator,
+        'tau_dynamic_on': tau_dynamic_on,
+        'alpha_delay': alpha_delay,
+        'lambda_z': lambda_z,
+        'tau_model': tau_model,
+        'epsilon_tau': epsilon_tau,
+        'eta': eta,
+        'max_delta_d': max_delta_d,
+        'interp_order': interp_order,
     }
 
     counter = mp.Value('i', 0)
@@ -274,6 +301,12 @@ def main():
             'tau_ref': tau_ref,
             'delay_interpolation': True,
         },
+        'tau_model': tau_model,
+        'epsilon_tau': epsilon_tau,
+        'eta': eta,
+        'alpha_delay': alpha_delay,
+        'lambda_z': lambda_z,
+        'topology': {'grid': [grid_size, grid_size], 'boundary_mode': boundary_mode},
     }
 
     repo_root = Path(__file__).resolve().parents[2]

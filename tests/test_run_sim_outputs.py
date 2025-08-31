@@ -66,6 +66,12 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
             'g1': [[1.0, 1.0]],
         },
         'integrator': 'IMEX',
+        'tau_model': 'z_aug',
+        'epsilon_tau': 0.15,
+        'eta': 0.08,
+        'alpha_delay': 0.2,
+        'lambda_z': 0.3,
+        'tau_dynamic_on': True,
     }
     config_path = tmp_path / 'config.json'
     config_path.write_text(json.dumps(cfg))
@@ -82,6 +88,10 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     assert captured['pulse_amplitude'] == cfg['pulse_amplitude']
     assert captured['detection_thresholds'] == cfg['detection_thresholds']
     assert captured['integrator'] == 'IMEX'
+    assert captured['alpha_delay'] == cfg['alpha_delay']
+    assert captured['lambda_z'] == cfg['lambda_z']
+    assert captured['epsilon_tau'] == cfg['epsilon_tau']
+    assert captured['eta_slew'] == cfg['eta']
 
     run_dir = next((tmp_path / 'runs' / 'passive').glob('phase1_run_*'))
     runs_df = pd.read_csv(run_dir / 'runs.csv')
@@ -90,5 +100,24 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
 
     with open(run_dir / 'run_meta.json') as f:
         meta = json.load(f)
-    for field in ['manifest', 'code_version', 'seeds_detailed', 'detection_thresholds', 'pulse_amplitude']:
+    for field in [
+        'manifest',
+        'code_version',
+        'seeds_detailed',
+        'detection_thresholds',
+        'pulse_amplitude',
+        'tau_model',
+        'epsilon_tau',
+        'eta',
+        'alpha_delay',
+        'lambda_z',
+        'topology',
+    ]:
         assert field in meta
+    assert meta['tau_model'] == cfg['tau_model']
+    assert meta['epsilon_tau'] == cfg['epsilon_tau']
+    assert meta['eta'] == cfg['eta']
+    assert meta['alpha_delay'] == cfg['alpha_delay']
+    assert meta['lambda_z'] == cfg['lambda_z']
+    assert meta['topology']['boundary_mode'] == cfg['boundary_mode']
+    assert meta['topology']['grid'] == [cfg['grid_size'], cfg['grid_size']]
