@@ -50,7 +50,7 @@ def run_single_sim(a_val, tau_val, seed):
         seed=seed,
         boundary_mode=_CONFIG['boundary_mode'],
         log_steps=_CONFIG['log_steps'],
-        log_path=_CONFIG['log_path'],
+        log_path=_CONFIG.get('log_path'),
         max_ram_bytes=_CONFIG['max_ram_bytes'],
         lpc_duration_physical=_CONFIG.get('lpc_duration_physical'),
         pulse_amplitude=_CONFIG['pulse_amplitude'],
