@@ -41,7 +41,7 @@ The project's goals are:
   - [Oscillators with delays](#oscillators-with-delays)
   - [Prony memory kernel](#prony-memory-kernel)
   - [Copy–brake law](#copybrake-law)
-  - [Emergent $$c$$ (self-averaging)](#emergent-c-self-averaging)
+  - [Emergent $c$ (self-averaging)](#emergent-c-self-averaging)
   - [Inhomogeneous $\hbar_{\text{eff}}$ floor](#inhomogeneous-hbar_textheff-floor)
   - [Law of Chaos Preservation (LPC)](#law-of-chaos-preservation-lpc)
 - [Experiments: Phase 1 counterproofs](#experiments-phase-1-counterproofs)
