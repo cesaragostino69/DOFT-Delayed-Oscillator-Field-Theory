@@ -97,6 +97,14 @@ Required columns (Phase‑2 additions in **bold**):
 - `lpc_ok_frac, lpc_vcount, lorentz_window`  
 - **`tau_dynamic_on` (bool), `alpha_delay`, `lambda_z`, `interp_order`, `ring_buffer_len`, `dt_max_delta_d_exceeded_count`, `delta_d_rate`**
 
+Field notes:
+
+- `tau_dynamic_on` toggles updates of link delays during a run.
+- `alpha_delay` scales how the local field influences the delay.
+- `lambda_z` is the relaxation rate of the auxiliary `z` memory used when smoothing delay adjustments.
+- `epsilon_\tau` and `\eta` live in `run_meta.json` and control ring-buffer slack and the maximum normalized delay slew, respectively.
+- `delta_d_rate` measures the fraction of integration steps where the computed delay change `\Delta d` exceeds the permitted bound.
+
 ### 6.2 `blocks.csv` (windowed LPC)
 - `run_id, window_id, K_metric, deltaK, block_skipped`
 

@@ -12,6 +12,12 @@
         "nondimensional_dt": 0.005,
         "a_ref": 1.0,
         "tau_ref": 1.0,
-        "delay_interpolation": true
+        "delay_interpolation": true,
+        "tau_dynamic_on": true,
+        "alpha_delay": 0.2,
+        "lambda_z": 0.3,
+        "tau_model": "z_aug",
+        "epsilon_tau": 0.1,
+        "eta": 0.08
     }
 }

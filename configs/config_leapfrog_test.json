@@ -1,6 +1,12 @@
 {
   "description": "Configuration used only for energy conservation tests.",
   "gamma": 0.0,
+  "tau_dynamic_on": false,
+  "alpha_delay": 0.0,
+  "lambda_z": 0.0,
+  "tau_model": "direct",
+  "epsilon_tau": 0.1,
+  "eta": 0.08,
   "numerical_params": {
     "integrator": "Leapfrog"
   }

@@ -171,6 +171,18 @@ python -m reports.self_avg --in out/sanity --out out/sanity/report
 
 Emits summary CSV/PNG with estimated $\bar c$ and anisotropy $\Delta c / c$.
 
+### Dynamic delay parameters
+
+The simulator can evolve link delays during a run when `tau_dynamic_on` is enabled. Related settings:
+
+- `tau_dynamic_on`: toggle dynamic delay updates.
+- `alpha_delay`: scales how strongly the local field `G` modulates the delay.
+- `lambda_z`: relaxation rate for an auxiliary `z` state that smooths `G` before applying `alpha_delay`.
+- `epsilon_tau`: fractional slack for the delay ring buffer (0.05–0.2) to accommodate changing $\tau$.
+- `eta`: maximum allowed normalized change of $\tau$ per step (slew bound).
+
+When dynamic $\tau$ is active, runs report `delta_d_rate`, the fraction of steps where the delay change $\Delta d$ exceeded the allowed bound, forcing the integrator to clamp the time step. See `configs/config_chaos.json` for a sample configuration enabling this mode.
+
 ---
 
 ## Data contracts

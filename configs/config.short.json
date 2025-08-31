@@ -24,6 +24,12 @@
     0.3,
     0.1
   ],
+  "tau_dynamic_on": false,
+  "alpha_delay": 0.0,
+  "lambda_z": 0.0,
+  "tau_model": "direct",
+  "epsilon_tau": 0.1,
+  "eta": 0.08,
   "gammas": [
     0.0,
     0.1,
