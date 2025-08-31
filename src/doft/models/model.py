@@ -117,9 +117,6 @@ class DOFTModel:
         log_path: str | None = None,
         max_ram_bytes: int = 32 * 1024**3,
         integrator: str = "IMEX",
-<<<<<<< ours
-<<<<<<< ours
-=======
         tau_dynamic: bool = False,
         alpha_delay: float = 0.0,
         lambda_z: float = 0.0,
@@ -128,15 +125,6 @@ class DOFTModel:
         max_delta_d: float = 0.25,
         interp_order: int = 3,
         ring_buffer_margin: int = 5,
->>>>>>> theirs
-=======
-        tau_dynamic: bool = False,
-        alpha_delay: float = 0.0,
-        lambda_z: float = 0.0,
-        max_delta_d: float = 0.25,
-        interp_order: int = 3,
-        ring_buffer_margin: int = 5,
->>>>>>> theirs
     ):
         self.grid_size = grid_size
         self.seed = seed
@@ -174,29 +162,23 @@ class DOFTModel:
         # The physical tau is still needed for delay calculation
         self.tau = tau
 
-<<<<<<< ours
-<<<<<<< ours
-=======
-=======
->>>>>>> theirs
         # Configuration for dynamic delays
         self.tau_dynamic_on = tau_dynamic
         self.alpha_delay = alpha_delay
         self.lambda_z = lambda_z
-<<<<<<< ours
+        if not 0.05 <= epsilon_tau <= 0.2:
+            raise ValueError("epsilon_tau must be between 0.05 and 0.2")
+        if not 0.05 <= eta_slew <= 0.1:
+            raise ValueError("eta_slew must be between 0.05 and 0.1")
         self.epsilon_tau = epsilon_tau
         self.eta_slew = eta_slew
         self.max_delta_d = max_delta_d
         if not 3 <= interp_order <= 5:
             raise ValueError("interp_order must be between 3 and 5")
-=======
-        self.max_delta_d = max_delta_d
->>>>>>> theirs
         self.interp_order = interp_order
         self.dt_max_delta_d_exceeded_count = 0
 
         if self.tau_dynamic_on:
-<<<<<<< ours
             self.ring_buffer_len = int(
                 np.ceil(self.tau_nondim * (1.0 + self.epsilon_tau) / self.dt_nondim)
             ) + ring_buffer_margin
@@ -213,28 +195,15 @@ class DOFTModel:
                 if self.lambda_z != 0.0
                 else None
             )
-=======
-            self.ring_buffer_len = int(np.ceil(self.tau_nondim / self.dt_nondim)) + ring_buffer_margin
-            self.q_ring = np.zeros((self.ring_buffer_len, grid_size, grid_size), dtype=np.float64)
-            self._ring_index = 0
->>>>>>> theirs
         else:
             self.ring_buffer_len = 0
             self.q_ring = None
             self._ring_index = 0
-<<<<<<< ours
             self.prev_tau = None
             self._prev_delay_steps = (
                 self.tau_nondim / self.dt_nondim if self.dt_nondim > 0 else 0.0
             )
             self.z_state = None
-
->>>>>>> theirs
-=======
-
-        self._prev_delay_steps = self.tau_nondim / self.dt_nondim if self.dt_nondim > 0 else 0.0
-
->>>>>>> theirs
         self.Q = np.zeros((grid_size, grid_size), dtype=np.float64)
         self.P = np.zeros((grid_size, grid_size), dtype=np.float64)
 
@@ -318,7 +287,6 @@ class DOFTModel:
 
             self._step = _step
 
-<<<<<<< ours
     def _compute_dynamic_tau(self) -> np.ndarray:
         """Compute per-cell delay ``tau_ij(t)`` with bounds.
 
@@ -372,33 +340,18 @@ class DOFTModel:
         zero diagnostics. Otherwise a fractional read from the ring buffer is
         performed using a configurable Lagrange interpolator of order
         ``self.interp_order`` (3--5).
-=======
-    def _get_delayed_q_interpolated(self, t_idx: int | None = None):
-        """Return delayed field along with delay-step diagnostics.
-
-        When dynamic delays are disabled, this simply returns the auxiliary
-        ``Q_delay`` array and zero diagnostics. With dynamic delays enabled,
-        the method performs a fractional read from the per-node ring buffer
-        using a 3rd-order Lagrange interpolator.
->>>>>>> theirs
 
         Returns
         -------
         tuple
             ``(field, delay_steps, delta_d)`` where ``field`` is the delayed
-<<<<<<< ours
             field, ``delay_steps`` the delay in units of ``dt`` (per cell) and
             ``delta_d`` the maximum absolute change since the previous call.
-=======
-            field, ``delay_steps`` the delay expressed in units of ``dt`` and
-            ``delta_d`` the change in ``delay_steps`` since the previous call.
->>>>>>> theirs
         """
 
         if not self.tau_dynamic_on or self.q_ring is None:
             return self.Q_delay, self._prev_delay_steps, 0.0
 
-<<<<<<< ours
         delay_steps = (
             tau / self.dt_nondim if self.dt_nondim > 0 else np.zeros_like(tau)
         )
@@ -424,21 +377,7 @@ class DOFTModel:
         abs_delta = np.abs(delay_steps - self._prev_delay_steps)
         delta_d = float(np.max(abs_delta))
         self.delta_d_log.append(delta_d)
-=======
-        delay_steps = self.tau_nondim / self.dt_nondim if self.dt_nondim > 0 else 0.0
-        idx_float = (self._ring_index - delay_steps) % self.ring_buffer_len
-        i0 = int(np.floor(idx_float))
-        frac = idx_float - i0
-        idxs = [(i0 - 1 + k) % self.ring_buffer_len for k in range(4)]
-        samples = self.q_ring[idxs]
-        f = frac
-        w0 = -f * (f - 1) * (f - 2) / 6.0
-        w1 = (f + 1) * (f - 1) * (f - 2) / 2.0
-        w2 = -(f + 1) * f * (f - 2) / 2.0
-        w3 = (f + 1) * f * (f - 1) / 6.0
-        field = w0 * samples[0] + w1 * samples[1] + w2 * samples[2] + w3 * samples[3]
-        delta_d = abs(delay_steps - self._prev_delay_steps)
->>>>>>> theirs
+        self._prev_delay_steps = delay_steps
         return field, delay_steps, delta_d
 
     def _laplacian(self, field: np.ndarray, mode: str | None = None) -> np.ndarray:
@@ -493,16 +432,12 @@ class DOFTModel:
         energy_prev = self.last_energy
 
         while True:
-<<<<<<< ours
             tau = (
                 self._compute_dynamic_tau()
                 if self.tau_dynamic_on
                 else np.full_like(self.Q, self.tau_nondim)
             )
             Q_delayed, delay_steps, delta_d = self._get_delayed_q_interpolated(tau, t_idx)
-=======
-            Q_delayed, delay_steps, delta_d = self._get_delayed_q_interpolated(t_idx)
->>>>>>> theirs
 
             if self.tau_dynamic_on and delta_d >= self.max_delta_d:
                 self.dt_max_delta_d_exceeded_count += 1

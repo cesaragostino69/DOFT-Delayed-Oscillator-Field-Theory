@@ -63,7 +63,7 @@ def run_single_sim(a_val, tau_val, seed):
         alpha_delay=_CONFIG.get('alpha_delay', 0.0),
         lambda_z=_CONFIG.get('lambda_z', 0.0),
         epsilon_tau=_CONFIG.get('epsilon_tau', 0.1),
-        eta=_CONFIG.get('eta', 0.1),
+        eta_slew=_CONFIG.get('eta', 0.1),
         max_delta_d=_CONFIG.get('max_delta_d', 0.25),
         interp_order=_CONFIG.get('interp_order', 3),
     )
