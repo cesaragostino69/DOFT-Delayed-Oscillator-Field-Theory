@@ -856,16 +856,6 @@ class DOFTModel:
                 "alpha_delay": self.alpha_delay,
                 "lambda_z": self.lambda_z,
                 "dt_max_delta_d_exceeded_count": self.dt_max_delta_d_exceeded_count,
-                "interp_order": self.interp_order,
-                "ring_buffer_len": self.ring_buffer_len,
-            }
-        )
-        final_run_metrics.update(
-            {
-                "tau_dynamic_on": self.tau_dynamic_on,
-                "alpha_delay": self.alpha_delay,
-                "lambda_z": self.lambda_z,
-                "dt_max_delta_d_exceeded_count": self.dt_max_delta_d_exceeded_count,
                 "delta_d_rate": delta_d_rate,
                 "interp_order": self.interp_order,
                 "ring_buffer_len": self.ring_buffer_len,
