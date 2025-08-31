@@ -829,7 +829,25 @@ class DOFTModel:
 
         pulse_metrics = self._calculate_pulse_metrics(n_steps=pulse_steps)
         lpc_metrics, blocks_df = self._calculate_lpc_metrics(n_steps=lpc_steps)
+
+        total_steps = pulse_steps + lpc_steps
+        if total_steps > 0:
+            delta_d_rate = self.dt_max_delta_d_exceeded_count / total_steps
+        else:
+            delta_d_rate = 0.0
+
         final_run_metrics = {**pulse_metrics, **lpc_metrics}
+        final_run_metrics.update(
+            {
+                "tau_dynamic_on": self.tau_dynamic_on,
+                "alpha_delay": self.alpha_delay,
+                "lambda_z": self.lambda_z,
+                "dt_max_delta_d_exceeded_count": self.dt_max_delta_d_exceeded_count,
+                "delta_d_rate": delta_d_rate,
+                "interp_order": self.interp_order,
+                "ring_buffer_len": self.ring_buffer_len,
+            }
+        )
         if self.log_steps:
             self.save_step_log()
         return final_run_metrics, blocks_df

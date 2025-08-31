@@ -36,6 +36,8 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
                 'lpc_vcount': 0,
                 'lpc_windows_analyzed': 1,
                 'block_skipped': 0,
+                'dt_max_delta_d_exceeded_count': 0,
+                'delta_d_rate': 0.0,
             }
             df = pd.DataFrame({
                 'window_id': [0],
@@ -83,7 +85,7 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
 
     run_dir = next((tmp_path / 'runs' / 'passive').glob('phase1_run_*'))
     runs_df = pd.read_csv(run_dir / 'runs.csv')
-    required_cols = {'lpc_ok_frac', 'ceff_pulse_ic95_lo', 'ceff_pulse_ic95_hi', 'lorentz_window', 'ceff_iso_diag'}
+    required_cols = {'lpc_ok_frac', 'ceff_pulse_ic95_lo', 'ceff_pulse_ic95_hi', 'lorentz_window', 'ceff_iso_diag', 'delta_d_rate'}
     assert required_cols.issubset(runs_df.columns)
 
     with open(run_dir / 'run_meta.json') as f:

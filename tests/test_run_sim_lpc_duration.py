@@ -29,6 +29,8 @@ def test_run_sim_respects_lpc_duration(tmp_path, monkeypatch):
                 'lpc_ok_frac': 1.0,
                 'lpc_vcount': 0,
                 'lpc_windows_analyzed': 1,
+                'dt_max_delta_d_exceeded_count': 0,
+                'delta_d_rate': 0.0,
             }
             df = pd.DataFrame({'window_id': [0], 'K_metric': [0.0],
                                'deltaK': [0.0], 'block_skipped': [0]})

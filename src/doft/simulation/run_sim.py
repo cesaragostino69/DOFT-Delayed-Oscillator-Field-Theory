@@ -63,10 +63,17 @@ def run_single_sim(a_val, tau_val, seed):
 
     run_metrics, blocks_df = model.run()
     logger.info(
-        "run_id=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
-        "C-2: var_c_over_c2=%s anisotropy_max_pct=%s "
-        "C-3: lpc_ok_frac=%s lpc_vcount=%s",
+        "run_id=%s tau_dynamic_on=%s alpha_delay=%s lambda_z=%s dt_max_delta_d_exceeded_count=%s "
+        "delta_d_rate=%s interp_order=%s ring_buffer_len=%s C-1: ceff_pulse=%s ceff_pulse_ic95_lo=%s ceff_pulse_ic95_hi=%s "
+        "C-2: var_c_over_c2=%s anisotropy_max_pct=%s C-3: lpc_ok_frac=%s lpc_vcount=%s",
         run_id,
+        run_metrics.get('tau_dynamic_on'),
+        run_metrics.get('alpha_delay'),
+        run_metrics.get('lambda_z'),
+        run_metrics.get('dt_max_delta_d_exceeded_count'),
+        run_metrics.get('delta_d_rate'),
+        run_metrics.get('interp_order'),
+        run_metrics.get('ring_buffer_len'),
         run_metrics.get('ceff_pulse'),
         run_metrics.get('ceff_pulse_ic95_lo'),
         run_metrics.get('ceff_pulse_ic95_hi'),
