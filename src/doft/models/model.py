@@ -208,12 +208,18 @@ class DOFTModel:
         self.P = np.zeros((grid_size, grid_size), dtype=np.float64)
 
         # Memory states for Prony-chain kernels (optional)
-        self.kernel_params = kernel_params
-        if kernel_params and kernel_params.get("weights") is not None:
-            n_modes = len(kernel_params.get("weights", []))
-            self.y_states = np.zeros((n_modes, grid_size, grid_size), dtype=np.float64)
-        else:
-            self.y_states = None
+        self.kernel_params = None
+        self.y_states = None
+        if kernel_params:
+            weights = np.asarray(kernel_params.get("weights", []), dtype=float)
+            thetas = np.asarray(kernel_params.get("thetas", []), dtype=float)
+            if weights.size != thetas.size:
+                raise ValueError("kernel_params require matching 'weights' and 'thetas'")
+            if weights.size:
+                if np.any(weights < 0) or np.any(thetas <= 0):
+                    raise ValueError("kernel_params must have weights >= 0 and thetas > 0")
+                self.kernel_params = {"weights": weights, "thetas": thetas}
+                self.y_states = np.zeros((weights.size, grid_size, grid_size), dtype=np.float64)
 
         # Delayed state approximated by a single Prony variable
         self.Q_delay = np.zeros((grid_size, grid_size), dtype=np.float64)
@@ -459,11 +465,15 @@ class DOFTModel:
             # Placeholder for possible nonlinear contributions (explicit)
             nonlinear_term = 0.0
 
+            memory_term = 0.0
+            if self.y_states is not None:
+                memory_term = np.sum(self.y_states, axis=0)
+
             # IMEX update: implicit in the linear -Q and -gamma P terms,
-            # explicit for K_term and nonlinear_term
+            # explicit for K_term, memory_term, and nonlinear_term
             numerator = (
                 self.P
-                + self.dt_nondim * (K_term + nonlinear_term - self.Q)
+                + self.dt_nondim * (K_term + nonlinear_term + memory_term - self.Q)
             )
             denom = 1.0 + self.dt_nondim * self.gamma_nondim + self.dt_nondim**2
             P_new = numerator / denom
@@ -479,11 +489,25 @@ class DOFTModel:
                 self.Q_delay /= scale
                 if self.q_ring is not None:
                     self.q_ring /= scale
+                if self.y_states is not None:
+                    self.y_states /= scale
+                Q_prev /= scale
+                P_prev /= scale
                 self.scale_accum *= scale
                 self.last_energy /= scale ** 2
                 energy_prev = self.last_energy
 
-            energy_new = self.energy_fn(Q_new, P_new)
+            if self.y_states is not None:
+                weights = self.kernel_params["weights"][:, None, None]
+                thetas = self.kernel_params["thetas"][:, None, None]
+                exp_fac = np.exp(-self.dt_nondim / thetas)
+                y_new = exp_fac * self.y_states + weights * (1.0 - exp_fac) * P_prev
+            else:
+                y_new = None
+
+            energy_new = compute_total_energy(
+                Q_new, P_new, self.a_nondim, y_new, self.kernel_params
+            )
             energy_prev_phys = energy_prev * self.scale_accum ** 2
             energy_new_phys = energy_new * self.scale_accum ** 2
 
@@ -493,6 +517,7 @@ class DOFTModel:
                 and energy_new_phys <= energy_prev_phys + 1e-12
             ):
                 self.P, self.Q = P_new, Q_new
+                self.y_states = y_new
                 self.last_energy = energy_new
                 if self.tau_dynamic_on and self.q_ring is not None:
                     self.q_ring[self._ring_index] = self.Q

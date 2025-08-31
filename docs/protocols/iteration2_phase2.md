@@ -55,6 +55,25 @@
 - **Energy‑extended monotonicity:** in closed–passive runs, the extended energy (oscillators + Prony states) must **not increase**.
 - **Delay‑slew guard:** track and log events with \(|\Delta d|>0.25\). Rate must stay <1% of steps in accepted runs.
 
+### 3.4 Integrator equations
+For each Prony mode with weight \(w_m\) and timescale \(\theta_m\), the auxiliary state
+\(y_m\) evolves exactly over one IMEX step as
+\[
+y_m^{n+1} = e^{-\Delta t/\theta_m} y_m^{n} + w_m \big(1-e^{-\Delta t/\theta_m}\big) \dot q_n,
+\]
+contributing a memory force \((M * \dot q)_n \approx \sum_m y_m^{n}\) in the momentum update.
+Passivity requires **weights \(w_m \ge 0\)** and **time constants \(\theta_m>0\)**.
+
+Example configuration snippet:
+
+```json
+"kernel_params": {
+  "weights": [0.5, 0.3, 0.2],
+  "thetas": [0.01, 0.1, 1.0]
+}
+```
+The legacy key `prony_memory` is accepted as an alias for backward compatibility.
+
 ---
 
 ## 4) Experiments (Phase‑2)

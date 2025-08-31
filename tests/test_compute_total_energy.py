@@ -23,7 +23,7 @@ def test_total_energy_with_memory():
     Q = np.zeros((2, 2))
     P = np.zeros_like(Q)
     y = np.ones((2, 2, 2))
-    params = {"weights": np.array([0.5, 1.5])}
+    params = {"weights": np.array([0.5, 1.5]), "thetas": np.array([0.1, 0.2])}
     e_total = compute_total_energy(Q, P, K=0.0, y_states=y, kernel_params=params)
     # Each mode contributes 0.5 * weight * 4
     assert np.isclose(e_total, 4.0)

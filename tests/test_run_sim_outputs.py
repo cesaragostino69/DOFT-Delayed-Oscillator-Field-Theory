@@ -72,6 +72,7 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
         'alpha_delay': 0.2,
         'lambda_z': 0.3,
         'tau_dynamic_on': True,
+        'prony_memory': {'weights': [0.1], 'thetas': [0.2]},
     }
     config_path = tmp_path / 'config.json'
     config_path.write_text(json.dumps(cfg))
@@ -92,6 +93,7 @@ def test_run_sim_outputs(tmp_path, monkeypatch):
     assert captured['lambda_z'] == cfg['lambda_z']
     assert captured['epsilon_tau'] == cfg['epsilon_tau']
     assert captured['eta_slew'] == cfg['eta']
+    assert captured['kernel_params'] == cfg['prony_memory']
 
     run_dir = next((tmp_path / 'runs' / 'passive').glob('phase1_run_*'))
     runs_df = pd.read_csv(run_dir / 'runs.csv')

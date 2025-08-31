@@ -160,7 +160,15 @@ def main():
     detection_thresholds = cfg_json.get('detection_thresholds', [1.0, 3.0, 5.0])
     max_pulse_steps = cfg_json.get('max_pulse_steps')
     max_lpc_steps = cfg_json.get('max_lpc_steps')
-    kernel_params = cfg_json.get('kernel_params')
+    kernel_params = cfg_json.get('kernel_params', cfg_json.get('prony_memory'))
+    if kernel_params is not None:
+        weights = np.asarray(kernel_params.get('weights', []), dtype=float)
+        thetas = np.asarray(kernel_params.get('thetas', []), dtype=float)
+        if weights.size != thetas.size:
+            raise ValueError('kernel_params require matching weights and thetas')
+        if np.any(weights < 0) or np.any(thetas <= 0):
+            raise ValueError('kernel_params require weights ≥ 0 and thetas > 0')
+        kernel_params = {'weights': weights.tolist(), 'thetas': thetas.tolist()}
     tau_dynamic_on = cfg_json.get('tau_dynamic_on', False)
     alpha_delay = cfg_json.get('alpha_delay', 0.0)
     lambda_z = cfg_json.get('lambda_z', 0.0)
@@ -317,6 +325,9 @@ def main():
         'lambda_z': lambda_z,
         'topology': {'grid': [grid_size, grid_size], 'boundary_mode': boundary_mode},
     }
+
+    if kernel_params is not None:
+        meta_data['kernel_params'] = kernel_params
 
     repo_root = Path(__file__).resolve().parents[2]
     try:

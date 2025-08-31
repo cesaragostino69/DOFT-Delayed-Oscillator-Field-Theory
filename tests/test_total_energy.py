@@ -14,12 +14,15 @@ def damping(request):
     return request.param
 
 
-@pytest.fixture(params=[
-    np.array([0.3]),
-    np.array([0.2, 0.4]),
-])
+@pytest.fixture(
+    params=[
+        (np.array([0.3]), np.array([0.1])),
+        (np.array([0.2, 0.4]), np.array([0.05, 0.2])),
+    ]
+)
 def memory_params(request):
-    return {"weights": request.param}
+    weights, thetas = request.param
+    return {"weights": weights, "thetas": thetas}
 
 
 def test_total_energy_passive(coupling, damping, memory_params):
