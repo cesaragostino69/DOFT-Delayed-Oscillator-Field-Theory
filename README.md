@@ -54,6 +54,7 @@ The project's goals are:
 
 This repo contains:
 - A **CPU-only** reference simulator for networks of **delayed oscillators** with finite-memory kernels.
+- Optional **dynamic-delay mode** using per-node ring buffers and fractional interpolation.
 - A **validation harness** focused on **falsification-first** checks (self-averaging of $c$, LPC in closed systems, etc.).
 - A **reporting pipeline** that emits CSV/Parquet plus plots for independent auditing.
 

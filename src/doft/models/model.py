@@ -118,12 +118,21 @@ class DOFTModel:
         max_ram_bytes: int = 32 * 1024**3,
         integrator: str = "IMEX",
 <<<<<<< ours
+<<<<<<< ours
 =======
         tau_dynamic: bool = False,
         alpha_delay: float = 0.0,
         lambda_z: float = 0.0,
         epsilon_tau: float = 0.1,
         eta_slew: float = 0.1,
+        max_delta_d: float = 0.25,
+        interp_order: int = 3,
+        ring_buffer_margin: int = 5,
+>>>>>>> theirs
+=======
+        tau_dynamic: bool = False,
+        alpha_delay: float = 0.0,
+        lambda_z: float = 0.0,
         max_delta_d: float = 0.25,
         interp_order: int = 3,
         ring_buffer_margin: int = 5,
@@ -166,20 +175,28 @@ class DOFTModel:
         self.tau = tau
 
 <<<<<<< ours
+<<<<<<< ours
 =======
+=======
+>>>>>>> theirs
         # Configuration for dynamic delays
         self.tau_dynamic_on = tau_dynamic
         self.alpha_delay = alpha_delay
         self.lambda_z = lambda_z
+<<<<<<< ours
         self.epsilon_tau = epsilon_tau
         self.eta_slew = eta_slew
         self.max_delta_d = max_delta_d
         if not 3 <= interp_order <= 5:
             raise ValueError("interp_order must be between 3 and 5")
+=======
+        self.max_delta_d = max_delta_d
+>>>>>>> theirs
         self.interp_order = interp_order
         self.dt_max_delta_d_exceeded_count = 0
 
         if self.tau_dynamic_on:
+<<<<<<< ours
             self.ring_buffer_len = int(
                 np.ceil(self.tau_nondim * (1.0 + self.epsilon_tau) / self.dt_nondim)
             ) + ring_buffer_margin
@@ -196,15 +213,26 @@ class DOFTModel:
                 if self.lambda_z != 0.0
                 else None
             )
+=======
+            self.ring_buffer_len = int(np.ceil(self.tau_nondim / self.dt_nondim)) + ring_buffer_margin
+            self.q_ring = np.zeros((self.ring_buffer_len, grid_size, grid_size), dtype=np.float64)
+            self._ring_index = 0
+>>>>>>> theirs
         else:
             self.ring_buffer_len = 0
             self.q_ring = None
             self._ring_index = 0
+<<<<<<< ours
             self.prev_tau = None
             self._prev_delay_steps = (
                 self.tau_nondim / self.dt_nondim if self.dt_nondim > 0 else 0.0
             )
             self.z_state = None
+
+>>>>>>> theirs
+=======
+
+        self._prev_delay_steps = self.tau_nondim / self.dt_nondim if self.dt_nondim > 0 else 0.0
 
 >>>>>>> theirs
         self.Q = np.zeros((grid_size, grid_size), dtype=np.float64)
@@ -290,6 +318,7 @@ class DOFTModel:
 
             self._step = _step
 
+<<<<<<< ours
     def _compute_dynamic_tau(self) -> np.ndarray:
         """Compute per-cell delay ``tau_ij(t)`` with bounds.
 
@@ -343,18 +372,33 @@ class DOFTModel:
         zero diagnostics. Otherwise a fractional read from the ring buffer is
         performed using a configurable Lagrange interpolator of order
         ``self.interp_order`` (3--5).
+=======
+    def _get_delayed_q_interpolated(self, t_idx: int | None = None):
+        """Return delayed field along with delay-step diagnostics.
+
+        When dynamic delays are disabled, this simply returns the auxiliary
+        ``Q_delay`` array and zero diagnostics. With dynamic delays enabled,
+        the method performs a fractional read from the per-node ring buffer
+        using a 3rd-order Lagrange interpolator.
+>>>>>>> theirs
 
         Returns
         -------
         tuple
             ``(field, delay_steps, delta_d)`` where ``field`` is the delayed
+<<<<<<< ours
             field, ``delay_steps`` the delay in units of ``dt`` (per cell) and
             ``delta_d`` the maximum absolute change since the previous call.
+=======
+            field, ``delay_steps`` the delay expressed in units of ``dt`` and
+            ``delta_d`` the change in ``delay_steps`` since the previous call.
+>>>>>>> theirs
         """
 
         if not self.tau_dynamic_on or self.q_ring is None:
             return self.Q_delay, self._prev_delay_steps, 0.0
 
+<<<<<<< ours
         delay_steps = (
             tau / self.dt_nondim if self.dt_nondim > 0 else np.zeros_like(tau)
         )
@@ -380,6 +424,21 @@ class DOFTModel:
         abs_delta = np.abs(delay_steps - self._prev_delay_steps)
         delta_d = float(np.max(abs_delta))
         self.delta_d_log.append(delta_d)
+=======
+        delay_steps = self.tau_nondim / self.dt_nondim if self.dt_nondim > 0 else 0.0
+        idx_float = (self._ring_index - delay_steps) % self.ring_buffer_len
+        i0 = int(np.floor(idx_float))
+        frac = idx_float - i0
+        idxs = [(i0 - 1 + k) % self.ring_buffer_len for k in range(4)]
+        samples = self.q_ring[idxs]
+        f = frac
+        w0 = -f * (f - 1) * (f - 2) / 6.0
+        w1 = (f + 1) * (f - 1) * (f - 2) / 2.0
+        w2 = -(f + 1) * f * (f - 2) / 2.0
+        w3 = (f + 1) * f * (f - 1) / 6.0
+        field = w0 * samples[0] + w1 * samples[1] + w2 * samples[2] + w3 * samples[3]
+        delta_d = abs(delay_steps - self._prev_delay_steps)
+>>>>>>> theirs
         return field, delay_steps, delta_d
 
     def _laplacian(self, field: np.ndarray, mode: str | None = None) -> np.ndarray:
@@ -434,12 +493,16 @@ class DOFTModel:
         energy_prev = self.last_energy
 
         while True:
+<<<<<<< ours
             tau = (
                 self._compute_dynamic_tau()
                 if self.tau_dynamic_on
                 else np.full_like(self.Q, self.tau_nondim)
             )
             Q_delayed, delay_steps, delta_d = self._get_delayed_q_interpolated(tau, t_idx)
+=======
+            Q_delayed, delay_steps, delta_d = self._get_delayed_q_interpolated(t_idx)
+>>>>>>> theirs
 
             if self.tau_dynamic_on and delta_d >= self.max_delta_d:
                 self.dt_max_delta_d_exceeded_count += 1
@@ -479,6 +542,8 @@ class DOFTModel:
                 Q_new /= scale
                 P_new /= scale
                 self.Q_delay /= scale
+                if self.q_ring is not None:
+                    self.q_ring /= scale
                 self.scale_accum *= scale
                 self.last_energy /= scale ** 2
                 energy_prev = self.last_energy
@@ -494,8 +559,13 @@ class DOFTModel:
             ):
                 self.P, self.Q = P_new, Q_new
                 self.last_energy = energy_new
-                alpha = self.dt_nondim / self.tau_nondim if self.tau_nondim > 0 else 0.0
-                self.Q_delay = (self.Q_delay + alpha * self.Q) / (1.0 + alpha)
+                if self.tau_dynamic_on and self.q_ring is not None:
+                    self.q_ring[self._ring_index] = self.Q
+                    self._ring_index = (self._ring_index + 1) % self.ring_buffer_len
+                    self._prev_delay_steps = delay_steps
+                else:
+                    alpha = self.dt_nondim / self.tau_nondim if self.tau_nondim > 0 else 0.0
+                    self.Q_delay = (self.Q_delay + alpha * self.Q) / (1.0 + alpha)
                 self.energy_log.append(energy_new_phys)
                 self.scale_log.append(self.scale_accum)
                 if self.log_steps:
@@ -628,6 +698,10 @@ class DOFTModel:
         self.Q.fill(0.0)
         self.P.fill(0.0)
         self.Q_delay.fill(0.0)
+        if self.q_ring is not None:
+            self.q_ring.fill(0.0)
+            self._ring_index = 0
+            self._prev_delay_steps = self.tau_nondim / self.dt_nondim if self.dt_nondim > 0 else 0.0
         if noise_std > 0.0:
             self.Q += self.rng.normal(0.0, noise_std, size=self.Q.shape)
 
@@ -763,6 +837,10 @@ class DOFTModel:
 
     def _calculate_lpc_metrics(self, n_steps):
         self.Q = self.rng.normal(0, 0.1, self.Q.shape); self.P.fill(0.0); self.Q_delay.fill(0.0)
+        if self.q_ring is not None:
+            self.q_ring.fill(0.0)
+            self._ring_index = 0
+            self._prev_delay_steps = self.tau_nondim / self.dt_nondim if self.dt_nondim > 0 else 0.0
         center = self.grid_size // 2
         time_series = np.zeros(n_steps)
         for t_idx in range(n_steps):
@@ -837,6 +915,16 @@ class DOFTModel:
             delta_d_rate = 0.0
 
         final_run_metrics = {**pulse_metrics, **lpc_metrics}
+        final_run_metrics.update(
+            {
+                "tau_dynamic_on": self.tau_dynamic_on,
+                "alpha_delay": self.alpha_delay,
+                "lambda_z": self.lambda_z,
+                "dt_max_delta_d_exceeded_count": self.dt_max_delta_d_exceeded_count,
+                "interp_order": self.interp_order,
+                "ring_buffer_len": self.ring_buffer_len,
+            }
+        )
         final_run_metrics.update(
             {
                 "tau_dynamic_on": self.tau_dynamic_on,

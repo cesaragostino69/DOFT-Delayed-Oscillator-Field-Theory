@@ -189,7 +189,7 @@ Files: run_sim.py, model.py, analyze_results.py, utils.py.
 5) LPC: only spectral entropy; lacks optional Lyapunov/shadowing and documented automatic copy-brake policy.
 6) Isotropy: 2-direction estimator; missing 3 directions and/or angular average in k-space.
 7) Sensitivities: partial derivatives dc/da and dc/dtau0 not reported.
-8) State-dependent delays: not implemented (only per-cell fixed tau0).
+8) State-dependent delays: now supported via optional dynamic-delay mode with per-node ring buffers and fractional interpolation.
 9) Universality of hbar_eff: independence from microdetails not tested robustly.
 10) SOC: no avalanche/power-tail extraction.
 11) Rydberg/QDT and Hawking: no pipelines yet.
